@@ -1,21 +1,18 @@
 # NH Proteção Veicular
 
-Site institucional da **Novo Horizonte Proteção Veicular** com página inicial, página de escritórios, formulário de cotação e fluxo de consulta da **2ª via de boleto**.
+Site institucional da **Novo Horizonte Proteção Veicular** com página inicial, página de escritórios, formulário de cotação e consulta da **2ª via de boleto**.
 
-## Fluxo de boleto
+## Fluxo de boleto atualizado
 
-A página `boleto.html` agora trabalha em 3 etapas:
+A página `boleto.html` agora segue o fluxo solicitado pelo cliente:
 
 1. O associado informa CPF/CNPJ.
-2. O site busca o cadastro e lista os veículos vinculados.
-3. O associado escolhe o veículo e o site consulta os boletos disponíveis.
+2. O site envia o CPF/CNPJ para uma única rota segura: `/api/consultar-boletos-associado`.
+3. Essa rota consulta a API da Hinova/SGA usando o token protegido nas variáveis de ambiente.
+4. A API retorna os boletos vinculados ao associado.
+5. O site exibe cada boleto com placa, veículo, valor, vencimento, PDF e código de barras/linha digitável quando disponíveis.
 
-Quando o boleto está disponível, o site mostra:
-
-- botão para abrir o PDF;
-- botão para copiar o código de barras/linha digitável.
-
-Quando o boleto estiver vencido há mais de 5 dias úteis, o site orienta o associado a entrar em contato com o financeiro para atualização.
+Se o boleto estiver vencido há mais de **5 dias úteis**, o site orienta o associado a entrar em contato com o financeiro para atualização.
 
 ## Estrutura
 
@@ -26,10 +23,7 @@ Quando o boleto estiver vencido há mais de 5 dias úteis, o site orienta o asso
 ├── style.css
 ├── script.js
 ├── api/
-│   ├── buscar-associado.js
-│   ├── listar-veiculos.js
-│   ├── consultar-boletos.js
-│   └── segunda-via-boleto.js
+│   └── consultar-boletos-associado.js
 └── assets/
     ├── app-store-badge.png
     ├── carro-hero.png
@@ -44,30 +38,32 @@ Quando o boleto estiver vencido há mais de 5 dias úteis, o site orienta o asso
 Configure as variáveis na Vercel/hospedagem. Não coloque token, usuário ou senha no HTML, CSS, JavaScript público ou GitHub.
 
 ```txt
-HINOVA_BASE_URL=https://url-base-da-hinova
+HINOVA_API_URL=https://url-da-api-da-hinova
+HINOVA_API_METHOD=POST
 HINOVA_TOKEN=token-gerado
-HINOVA_USUARIO=usuario-gerado
-HINOVA_SENHA=senha-gerada
-
-HINOVA_ASSOCIADO_URL=https://endpoint-post-buscar-associado
-HINOVA_VEICULOS_URL=https://endpoint-get-listar-veiculos
-HINOVA_BOLETOS_URL=https://endpoint-get-consultar-boletos
-
-HINOVA_ASSOCIADO_METHOD=POST
-HINOVA_VEICULOS_METHOD=GET
-HINOVA_BOLETOS_METHOD=GET
-
 HINOVA_AUTH_TYPE=bearer
 HINOVA_AUTH_HEADER=Authorization
 HINOVA_AUTH_PREFIX=Bearer
-
-HINOVA_DOCUMENT_FIELD=documento
-HINOVA_ASSOCIADO_ID_FIELD=associadoId
-HINOVA_VEHICLE_ID_FIELD=veiculoId
-HINOVA_PLATE_FIELD=placa
+HINOVA_DOCUMENT_FIELD=cpf
+BOLETO_MAX_BUSINESS_DAYS_AFTER_DUE=5
 ```
 
-Caso a Hinova use nomes diferentes nos parâmetros, altere as variáveis `HINOVA_DOCUMENT_FIELD`, `HINOVA_ASSOCIADO_ID_FIELD`, `HINOVA_VEHICLE_ID_FIELD` e `HINOVA_PLATE_FIELD`.
+Se a Hinova informar que o CPF/CNPJ precisa ir em outro campo, altere `HINOVA_DOCUMENT_FIELD` para o nome correto, por exemplo `documento` ou `cpf_cnpj`.
+
+## Arquivos removidos
+
+As rotas antigas do fluxo em etapas foram removidas do projeto final:
+
+- `buscar-associado.js`
+- `listar-veiculos.js`
+- `consultar-boletos.js`
+- `segunda-via-boleto.js`
+
+Agora o projeto usa somente:
+
+```txt
+api/consultar-boletos-associado.js
+```
 
 ## Como executar
 
