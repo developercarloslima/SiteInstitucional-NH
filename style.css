@@ -3638,7 +3638,7 @@ body.cotacao-modal-open {
 }
 
 
-/* Fluxo de 2ª via de boleto: CPF/CNPJ -> veículos -> boletos */
+/* Fluxo de 2ª via de boleto: CPF/CNPJ -> boletos do associado */
 .boleto-flow-card {
   align-items: flex-start;
 }
@@ -4666,5 +4666,26 @@ body.cotacao-modal-open {
 
   .footer-compact-contact .footer-compact-icons {
     align-self: flex-start;
+  }
+}
+
+
+/* Ajuste do fluxo simplificado de boletos por CPF/CNPJ */
+.boleto-result-header--inline {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.boleto-item__actions .boleto-empty-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .boleto-result-header--inline {
+    grid-template-columns: 1fr;
   }
 }

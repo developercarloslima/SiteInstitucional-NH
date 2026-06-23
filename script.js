@@ -210,25 +210,21 @@ if (contactForm && contactFormMessage) {
   });
 }
 
-
-// Consulta da 2ª via de boleto em etapas: CPF/CNPJ -> veículos -> boletos
+// Consulta da 2ª via de boleto por associado: CPF/CNPJ -> todos os boletos disponíveis
 const boletoBuscaForm = document.querySelector('#boletoBuscaForm');
 const boletoDocumento = document.querySelector('#boletoDocumento');
 const boletoFormMessage = document.querySelector('#boletoFormMessage');
 const boletoAssociadoArea = document.querySelector('#boletoAssociadoArea');
 const boletoAssociadoNome = document.querySelector('#boletoAssociadoNome');
-const boletoVeiculosArea = document.querySelector('#boletoVeiculosArea');
-const boletoVehicleList = document.querySelector('#boletoVehicleList');
 const boletoBoletosArea = document.querySelector('#boletoBoletosArea');
-const boletoSelectedVehicle = document.querySelector('#boletoSelectedVehicle');
+const boletoResumo = document.querySelector('#boletoResumo');
 const boletoList = document.querySelector('#boletoList');
 const boletoNovaBusca = document.querySelector('#boletoNovaBusca');
 
 let boletoState = {
   documento: '',
   associado: null,
-  veiculos: [],
-  veiculoSelecionado: null,
+  boletos: [],
 };
 
 function onlyDigits(value) {
@@ -258,12 +254,6 @@ function setBoletoMessage(text, type = '') {
   boletoFormMessage.dataset.status = type;
 }
 
-function setBoletoStep(step) {
-  document.querySelectorAll('[data-step-indicator]').forEach((item) => {
-    item.classList.toggle('is-active', item.dataset.stepIndicator === step);
-  });
-}
-
 function setElementHidden(element, hidden = true) {
   if (!element) return;
   element.hidden = hidden;
@@ -273,66 +263,47 @@ function resetBoletoFlow() {
   boletoState = {
     documento: '',
     associado: null,
-    veiculos: [],
-    veiculoSelecionado: null,
+    boletos: [],
   };
 
   if (boletoBuscaForm) boletoBuscaForm.reset();
-  if (boletoVehicleList) boletoVehicleList.innerHTML = '';
   if (boletoList) boletoList.innerHTML = '';
   if (boletoAssociadoNome) boletoAssociadoNome.textContent = 'Associado';
-  if (boletoSelectedVehicle) boletoSelectedVehicle.textContent = 'Veículo selecionado';
+  if (boletoResumo) boletoResumo.textContent = 'Selecione o boleto desejado para abrir/imprimir.';
 
   setElementHidden(boletoAssociadoArea, true);
-  setElementHidden(boletoVeiculosArea, true);
   setElementHidden(boletoBoletosArea, true);
   setBoletoMessage('', '');
-  setBoletoStep('documento');
   boletoDocumento?.focus();
 }
 
-async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
-  const data = await response.json().catch(() => ({}));
+function formatCurrency(value) {
+  if (value === undefined || value === null || value === '') return '';
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Não foi possível concluir a solicitação.');
+  if (typeof value === 'number') {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  return data;
+  const raw = String(value).trim();
+  if (!raw) return '';
+
+  if (/^R\$/.test(raw)) return raw;
+
+  const normalized = raw
+    .replace(/\s/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
+
+  const number = Number(normalized);
+  if (Number.isNaN(number)) return raw;
+
+  return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function getAssociadoId(associado) {
-  return associado?.id || associado?.id_associado || associado?.codigo_associado || associado?.codigo || associado?.idCliente || '';
-}
+function formatDate(value) {
+  if (!value) return '';
+  const raw = String(value).trim();
 
-function getAssociadoNome(associado) {
-  return associado?.nome || associado?.nome_associado || associado?.associado || associado?.razao_social || 'Associado encontrado';
-}
-
-function getVeiculoId(veiculo) {
-  return veiculo?.id || veiculo?.id_veiculo || veiculo?.codigo_veiculo || veiculo?.codigo || veiculo?.idVeiculo || '';
-}
-
-function getVeiculoLabel(veiculo) {
-  const placa = veiculo?.placa || veiculo?.Placa || 'Sem placa';
-  const modelo = veiculo?.modelo || veiculo?.Modelo || veiculo?.veiculo || veiculo?.descricao || veiculo?.marca_modelo || '';
-  const ano = veiculo?.ano || veiculo?.ano_modelo || '';
-  return [placa, modelo, ano].filter(Boolean).join(' • ');
-}
-
-function getBoletoPdfUrl(boleto) {
-  return boleto?.pdf || boleto?.url_pdf || boleto?.url_boleto || boleto?.link || boleto?.url || boleto?.boleto || '';
-}
-
-function getCodigoBarras(boleto) {
-  return boleto?.codigo_barras || boleto?.linha_digitavel || boleto?.linhaDigitavel || boleto?.codigo || boleto?.barcode || '';
-}
-
-function formatDateBR(value) {
-  if (!value) return 'Não informado';
-
-  const raw = String(value);
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
 
   const date = new Date(raw.includes('T') ? raw : `${raw}T12:00:00`);
@@ -341,176 +312,121 @@ function formatDateBR(value) {
   return date.toLocaleDateString('pt-BR');
 }
 
-function getBoletoVencimento(boleto) {
-  return boleto?.data_vencimento || boleto?.vencimento || boleto?.dt_vencimento || boleto?.dataVencimento || boleto?.data || '';
+function getBoletoTitle(boleto, index) {
+  const placa = boleto.placa ? `Placa ${boleto.placa}` : `Boleto ${index + 1}`;
+  const veiculo = boleto.veiculo ? ` — ${boleto.veiculo}` : '';
+  return `${placa}${veiculo}`;
 }
 
 async function copyToClipboard(text) {
-  if (!text) return;
+  if (!text) throw new Error('Código de barras não disponível.');
 
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
     return;
   }
 
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'absolute';
-  textarea.style.left = '-9999px';
-  document.body.appendChild(textarea);
-  textarea.select();
+  const input = document.createElement('textarea');
+  input.value = text;
+  input.setAttribute('readonly', '');
+  input.style.position = 'fixed';
+  input.style.left = '-9999px';
+  document.body.appendChild(input);
+  input.select();
   document.execCommand('copy');
-  document.body.removeChild(textarea);
+  input.remove();
 }
 
-function renderVeiculos(veiculos) {
-  if (!boletoVehicleList) return;
-  boletoVehicleList.innerHTML = '';
+function createBoletoItem(boleto, index) {
+  const item = document.createElement('article');
+  item.className = `boleto-item${boleto.disponivel === false ? ' boleto-item--blocked' : ''}`;
 
-  if (!veiculos.length) {
-    boletoVehicleList.innerHTML = `
-      <div class="boleto-empty-state">
-        Nenhum veículo foi encontrado para este CPF/CNPJ. Confira os dados digitados ou entre em contato com a Novo Horizonte.
-      </div>
-    `;
-    return;
+  const info = document.createElement('div');
+  info.className = 'boleto-item__info';
+
+  const label = document.createElement('small');
+  label.textContent = boleto.disponivel === false ? 'Necessário atualizar' : 'Boleto disponível';
+
+  const title = document.createElement('strong');
+  title.textContent = getBoletoTitle(boleto, index);
+
+  const details = document.createElement('span');
+  const parts = [];
+  if (boleto.valor) parts.push(`Valor: ${formatCurrency(boleto.valor)}`);
+  if (boleto.vencimento) parts.push(`Vencimento: ${formatDate(boleto.vencimento)}`);
+  if (boleto.status) parts.push(`Status: ${boleto.status}`);
+  details.textContent = parts.length ? parts.join(' | ') : 'Informações do boleto disponíveis para consulta.';
+
+  info.append(label, title, details);
+
+  if (boleto.codigoBarras || boleto.linhaDigitavel) {
+    const code = document.createElement('code');
+    code.textContent = boleto.linhaDigitavel || boleto.codigoBarras;
+    info.appendChild(code);
   }
 
-  veiculos.forEach((veiculo, index) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'boleto-vehicle-card';
-    button.innerHTML = `
-      <i class="fa-solid fa-car-side" aria-hidden="true"></i>
-      <span>
-        <strong>${getVeiculoLabel(veiculo)}</strong>
-        <small>Clique para consultar boletos</small>
-      </span>
-    `;
+  if (boleto.disponivel === false) {
+    const blocked = document.createElement('p');
+    blocked.className = 'boleto-block-message';
+    blocked.textContent = boleto.mensagem || 'Este boleto não está disponível para emissão pelo site. Entre em contato com o setor financeiro para atualizar a segunda via.';
+    info.appendChild(blocked);
+  }
 
-    button.addEventListener('click', () => consultarBoletos(veiculo));
-    boletoVehicleList.appendChild(button);
-  });
+  const actions = document.createElement('div');
+  actions.className = 'boleto-item__actions';
+
+  if (boleto.pdf && boleto.disponivel !== false) {
+    const openLink = document.createElement('a');
+    openLink.className = 'primary-button';
+    openLink.href = boleto.pdf;
+    openLink.target = '_blank';
+    openLink.rel = 'noopener';
+    openLink.textContent = 'Abrir boleto';
+    actions.appendChild(openLink);
+  }
+
+  if ((boleto.codigoBarras || boleto.linhaDigitavel) && boleto.disponivel !== false) {
+    const copyButton = document.createElement('button');
+    copyButton.className = 'secondary-button';
+    copyButton.type = 'button';
+    copyButton.textContent = 'Copiar código';
+    copyButton.addEventListener('click', async () => {
+      try {
+        await copyToClipboard(boleto.linhaDigitavel || boleto.codigoBarras);
+        setBoletoMessage('Código copiado com sucesso.', 'success');
+      } catch (error) {
+        setBoletoMessage(error.message || 'Não foi possível copiar o código.', 'error');
+      }
+    });
+    actions.appendChild(copyButton);
+  }
+
+  if (!actions.children.length && boleto.disponivel !== false) {
+    const empty = document.createElement('span');
+    empty.className = 'boleto-empty-state';
+    empty.textContent = 'A API retornou o boleto, mas não enviou PDF ou código de barras reconhecido.';
+    actions.appendChild(empty);
+  }
+
+  item.append(info, actions);
+  return item;
 }
 
-function renderBoletos(boletos) {
+function renderBoletos(boletos = []) {
   if (!boletoList) return;
   boletoList.innerHTML = '';
 
   if (!boletos.length) {
-    boletoList.innerHTML = `
-      <div class="boleto-empty-state">
-        Nenhum boleto em aberto foi encontrado para este veículo.
-      </div>
-    `;
+    const empty = document.createElement('p');
+    empty.className = 'boleto-empty-state';
+    empty.textContent = 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
+    boletoList.appendChild(empty);
     return;
   }
 
   boletos.forEach((boleto, index) => {
-    const canEmitir = boleto.pode_emitir !== false && boleto.emitivel !== false && boleto.disponivel !== false;
-    const pdfUrl = getBoletoPdfUrl(boleto);
-    const codigoBarras = getCodigoBarras(boleto);
-    const vencimento = getBoletoVencimento(boleto);
-    const valor = boleto.valor || boleto.valor_boleto || boleto.valor_total || '';
-    const mensagemBloqueio = boleto.mensagem || boleto.message || 'Este boleto não está disponível para emissão pelo site, pois passou do prazo permitido para retirada da segunda via. Entre em contato com o setor financeiro da Novo Horizonte para atualizar seu boleto.';
-
-    const item = document.createElement('article');
-    item.className = `boleto-item ${canEmitir ? '' : 'boleto-item--blocked'}`;
-    item.innerHTML = `
-      <div class="boleto-item__info">
-        <small>Boleto ${index + 1}</small>
-        <strong>Vencimento: ${formatDateBR(vencimento)}</strong>
-        ${valor ? `<span>Valor: ${valor}</span>` : ''}
-        ${codigoBarras ? `<code>${codigoBarras}</code>` : ''}
-        ${!canEmitir ? `<p class="boleto-block-message">${mensagemBloqueio}</p>` : ''}
-      </div>
-      <div class="boleto-item__actions">
-        ${canEmitir && pdfUrl ? `<a class="primary-button" href="${pdfUrl}" target="_blank" rel="noopener">Abrir PDF</a>` : ''}
-        ${canEmitir && codigoBarras ? `<button class="secondary-button boleto-copy-button" type="button">Copiar código</button>` : ''}
-        ${!canEmitir ? `<a class="secondary-button" href="https://wa.me/558221800532?text=Olá,%20preciso%20atualizar%20a%202ª%20via%20do%20meu%20boleto." target="_blank" rel="noopener">Falar com financeiro</a>` : ''}
-      </div>
-    `;
-
-    const copyButton = item.querySelector('.boleto-copy-button');
-    copyButton?.addEventListener('click', async () => {
-      try {
-        await copyToClipboard(codigoBarras);
-        copyButton.textContent = 'Código copiado!';
-        setTimeout(() => {
-          copyButton.textContent = 'Copiar código';
-        }, 2200);
-      } catch {
-        setBoletoMessage('Não foi possível copiar o código. Selecione e copie manualmente.', 'error');
-      }
-    });
-
-    boletoList.appendChild(item);
+    boletoList.appendChild(createBoletoItem(boleto, index));
   });
-}
-
-async function buscarCadastro(documento) {
-  setBoletoMessage('Buscando cadastro...', 'loading');
-  setBoletoStep('documento');
-
-  const data = await requestJson('/api/buscar-associado', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ documento }),
-  });
-
-  boletoState.associado = data.associado || data.data || data;
-  boletoState.documento = documento;
-
-  if (boletoAssociadoNome) {
-    boletoAssociadoNome.textContent = getAssociadoNome(boletoState.associado);
-  }
-
-  setElementHidden(boletoAssociadoArea, false);
-  await listarVeiculos();
-}
-
-async function listarVeiculos() {
-  const associadoId = getAssociadoId(boletoState.associado);
-  const params = new URLSearchParams({ documento: boletoState.documento });
-  if (associadoId) params.set('associadoId', associadoId);
-
-  setBoletoMessage('Listando veículos vinculados ao cadastro...', 'loading');
-
-  const data = await requestJson(`/api/listar-veiculos?${params.toString()}`);
-  const veiculos = data.veiculos || data.data || [];
-
-  boletoState.veiculos = Array.isArray(veiculos) ? veiculos : [];
-  renderVeiculos(boletoState.veiculos);
-
-  setElementHidden(boletoVeiculosArea, false);
-  setElementHidden(boletoBoletosArea, true);
-  setBoletoStep('veiculos');
-  setBoletoMessage('Cadastro encontrado. Agora selecione o veículo.', 'success');
-}
-
-async function consultarBoletos(veiculo) {
-  boletoState.veiculoSelecionado = veiculo;
-  const associadoId = getAssociadoId(boletoState.associado);
-  const veiculoId = getVeiculoId(veiculo);
-  const placa = veiculo?.placa || veiculo?.Placa || '';
-
-  const params = new URLSearchParams({ documento: boletoState.documento });
-  if (associadoId) params.set('associadoId', associadoId);
-  if (veiculoId) params.set('veiculoId', veiculoId);
-  if (placa) params.set('placa', placa);
-
-  setBoletoMessage('Consultando boletos do veículo...', 'loading');
-  setBoletoStep('boletos');
-
-  const data = await requestJson(`/api/consultar-boletos?${params.toString()}`);
-  const boletos = data.boletos || data.data || [];
-
-  if (boletoSelectedVehicle) boletoSelectedVehicle.textContent = getVeiculoLabel(veiculo);
-
-  renderBoletos(Array.isArray(boletos) ? boletos : []);
-  setElementHidden(boletoBoletosArea, false);
-  setBoletoMessage('Consulta finalizada.', 'success');
 }
 
 if (boletoDocumento) {
@@ -519,12 +435,16 @@ if (boletoDocumento) {
   });
 }
 
+if (boletoNovaBusca) {
+  boletoNovaBusca.addEventListener('click', resetBoletoFlow);
+}
+
 if (boletoBuscaForm) {
   boletoBuscaForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const submitButton = boletoBuscaForm.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton ? submitButton.textContent : 'Buscar cadastro';
+    const originalButtonText = submitButton ? submitButton.textContent : 'Consultar boletos';
     const documento = onlyDigits(boletoDocumento?.value || '');
 
     if (documento.length !== 11 && documento.length !== 14) {
@@ -534,21 +454,53 @@ if (boletoBuscaForm) {
     }
 
     try {
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Buscando...';
-      }
-
+      boletoState.documento = documento;
+      setBoletoMessage('Consultando boletos do associado...', 'loading');
       setElementHidden(boletoAssociadoArea, true);
-      setElementHidden(boletoVeiculosArea, true);
       setElementHidden(boletoBoletosArea, true);
-      if (boletoVehicleList) boletoVehicleList.innerHTML = '';
       if (boletoList) boletoList.innerHTML = '';
 
-      await buscarCadastro(documento);
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Consultando...';
+      }
+
+      const response = await fetch('/api/consultar-boletos-associado', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ documento }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Não foi possível consultar os boletos do associado.');
+      }
+
+      boletoState.associado = data.associado || null;
+      boletoState.boletos = Array.isArray(data.boletos) ? data.boletos : [];
+
+      if (boletoAssociadoNome) {
+        boletoAssociadoNome.textContent = data.associado?.nome || 'Associado localizado';
+      }
+
+      if (boletoResumo) {
+        boletoResumo.textContent = boletoState.boletos.length
+          ? `${boletoState.boletos.length} boleto(s) encontrado(s). Confira placa, valor e vencimento antes de abrir/imprimir.`
+          : 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
+      }
+
+      renderBoletos(boletoState.boletos);
+      setElementHidden(boletoAssociadoArea, false);
+      setElementHidden(boletoBoletosArea, false);
+      setBoletoMessage('Consulta realizada com sucesso.', 'success');
     } catch (error) {
-      setBoletoMessage(error.message || 'Não foi possível consultar agora. Tente novamente em instantes.', 'error');
-      setBoletoStep('documento');
+      setBoletoMessage(
+        error.message || 'Não foi possível buscar os boletos agora. Tente novamente em instantes.',
+        'error'
+      );
     } finally {
       if (submitButton) {
         submitButton.disabled = false;
@@ -557,5 +509,3 @@ if (boletoBuscaForm) {
     }
   });
 }
-
-boletoNovaBusca?.addEventListener('click', resetBoletoFlow);
