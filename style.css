@@ -4630,3 +4630,41 @@ body.cotacao-modal-open {
     padding-left: 0;
   }
 }
+
+/* Ajuste: centralizar e alinhar o bloco de contato no footer */
+.footer-compact-top {
+  align-items: stretch;
+}
+
+.footer-compact-item {
+  justify-content: center;
+}
+
+.footer-compact-contact {
+  justify-content: center;
+  padding-left: 0;
+}
+
+.footer-compact-contact .footer-compact-icons {
+  align-self: flex-start;
+}
+
+.footer-compact-contact .footer-compact-text {
+  min-width: fit-content;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .footer-compact-top {
+    align-items: stretch;
+  }
+
+  .footer-compact-item,
+  .footer-compact-contact {
+    justify-content: center;
+  }
+
+  .footer-compact-contact .footer-compact-icons {
+    align-self: flex-start;
+  }
+}
