@@ -3636,3 +3636,997 @@ body.cotacao-modal-open {
     max-width: 300px !important;
   }
 }
+
+
+/* Fluxo de 2ª via de boleto: CPF/CNPJ -> veículos -> boletos */
+.boleto-flow-card {
+  align-items: flex-start;
+}
+
+.boleto-flow-content {
+  min-width: 0;
+}
+
+.boleto-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 24px 0 20px;
+}
+
+.boleto-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+  background: #f7f8fb;
+  font-size: 0.82rem;
+  font-weight: 900;
+  transition: 0.2s ease;
+}
+
+.boleto-step strong {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--navy-950);
+  background: #e8edf6;
+}
+
+.boleto-step.is-active {
+  color: var(--navy-950);
+  border-color: rgba(240, 240, 0, 0.9);
+  background: rgba(240, 240, 0, 0.16);
+}
+
+.boleto-step.is-active strong {
+  background: var(--yellow);
+}
+
+.boleto-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.boleto-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--navy-950);
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.boleto-form input {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 15px;
+  color: var(--navy-950);
+  background: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.boleto-form input:focus {
+  border-color: var(--yellow-dark);
+  box-shadow: 0 0 0 4px rgba(240, 240, 0, 0.18);
+}
+
+.boleto-form-message {
+  min-height: 22px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.boleto-form-message[data-status="success"] {
+  color: #15803d;
+}
+
+.boleto-form-message[data-status="error"] {
+  color: #dc2626;
+}
+
+.boleto-form-message[data-status="loading"] {
+  color: var(--navy-950);
+}
+
+.boleto-result-area {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.boleto-result-header,
+.boleto-result-title {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.boleto-result-header small,
+.boleto-result-title p {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.boleto-result-header strong,
+.boleto-result-title h3 {
+  color: var(--navy-950);
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.boleto-link-button {
+  width: fit-content;
+  border: 0;
+  padding: 0;
+  color: #1d4ed8;
+  background: transparent;
+  font-weight: 900;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.boleto-vehicle-list,
+.boleto-list {
+  display: grid;
+  gap: 12px;
+}
+
+.boleto-vehicle-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--navy-950);
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(7, 12, 64, 0.05);
+  transition: 0.2s ease;
+}
+
+.boleto-vehicle-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--yellow-dark);
+  box-shadow: 0 16px 36px rgba(7, 12, 64, 0.09);
+}
+
+.boleto-vehicle-card i {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--navy-950);
+  background: var(--yellow);
+}
+
+.boleto-vehicle-card span {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.boleto-vehicle-card small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.boleto-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(7, 12, 64, 0.05);
+}
+
+.boleto-item--blocked {
+  border-color: rgba(220, 38, 38, 0.24);
+  background: #fff7f7;
+}
+
+.boleto-item__info {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.boleto-item__info small {
+  color: var(--yellow-dark);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.boleto-item__info strong {
+  color: var(--navy-950);
+  font-size: 1rem;
+}
+
+.boleto-item__info span {
+  margin: 0;
+  color: var(--muted);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.boleto-item__info code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--navy-950);
+  background: #f1f4f9;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.boleto-block-message {
+  max-width: none !important;
+  color: #b91c1c !important;
+  font-weight: 800 !important;
+}
+
+.boleto-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.boleto-item__actions .primary-button,
+.boleto-item__actions .secondary-button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.boleto-empty-state {
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted);
+  background: #f7f8fb;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .boleto-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .boleto-page-card.boleto-flow-card {
+    text-align: left;
+  }
+
+  .boleto-page-card.boleto-flow-card .boleto-page-icon {
+    margin-inline: auto;
+  }
+
+  .boleto-item {
+    grid-template-columns: 1fr;
+  }
+
+  .boleto-item__actions {
+    justify-content: stretch;
+  }
+
+  .boleto-item__actions .primary-button,
+  .boleto-item__actions .secondary-button,
+  .boleto-vehicle-card {
+    width: 100%;
+  }
+}
+
+/* Ajuste final: centralização do botão de WhatsApp no cabeçalho mobile */
+@media (max-width: 760px) {
+  .nav-wrapper .header-cta {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border-radius: 9px;
+    font-size: 0 !important;
+    line-height: 1 !important;
+  }
+
+  .nav-wrapper .header-cta .wa-icon {
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 26px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 1.65rem !important;
+    line-height: 1 !important;
+    transform: translateY(0) !important;
+  }
+
+  .nav-wrapper .header-cta .wa-icon::before {
+    display: block;
+    line-height: 1;
+  }
+}
+
+/* Ajuste solicitado: badges do aplicativo em linha no mobile */
+@media (max-width: 760px) {
+  .app-card {
+    grid-template-columns: 86px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "phone copy"
+      "buttons buttons" !important;
+    gap: 14px 12px !important;
+    padding: 18px 14px 20px !important;
+  }
+
+  .store-buttons,
+  .store-buttons.store-badges {
+    grid-area: buttons !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 8px auto 0 !important;
+  }
+
+  .store-buttons a,
+  .store-buttons a.store-badge-link,
+  .store-buttons.store-badges a {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 18px rgba(7, 12, 64, 0.12) !important;
+  }
+
+  .store-buttons a img,
+  .store-buttons a.store-badge-link img,
+  .store-buttons.store-badges img {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .store-buttons,
+  .store-buttons.store-badges {
+    gap: 6px !important;
+  }
+
+  .store-buttons a,
+  .store-buttons a.store-badge-link,
+  .store-buttons.store-badges a {
+    border-radius: 8px !important;
+  }
+
+  .store-buttons a img,
+  .store-buttons a.store-badge-link img,
+  .store-buttons.store-badges img {
+    border-radius: 8px !important;
+  }
+}
+
+/* Ajuste final solicitado: seção do aplicativo compacta em linha */
+.app-section {
+  padding: 8px 0 16px !important;
+}
+
+.app-card {
+  width: min(100%, 1000px) !important;
+  min-height: 118px !important;
+  display: grid !important;
+  grid-template-columns: 145px minmax(0, 1fr) 235px !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 8px 28px 8px 24px !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.app-card .phone-mockup {
+  display: block !important;
+  position: relative !important;
+  width: 135px !important;
+  height: 118px !important;
+  margin: 0 !important;
+  align-self: center !important;
+}
+
+.app-card .phone-mockup::before {
+  left: 12px !important;
+  bottom: -78px !important;
+  width: 88px !important;
+  height: 196px !important;
+  border-width: 4px !important;
+  border-radius: 18px !important;
+  transform: rotate(-13deg) !important;
+}
+
+.app-card .phone-screen {
+  left: 19px !important;
+  bottom: -63px !important;
+  width: 76px !important;
+  height: 170px !important;
+  border-radius: 13px !important;
+  transform: rotate(-13deg) !important;
+}
+
+.app-card .mini-logo {
+  width: 34px !important;
+  margin-top: 15px !important;
+}
+
+.app-card .app-icons {
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 22px !important;
+  gap: 5px !important;
+}
+
+.app-card .app-icons i {
+  width: 9px !important;
+  height: 9px !important;
+}
+
+.app-card .app-copy {
+  min-width: 0 !important;
+  text-align: left !important;
+  padding: 0 !important;
+}
+
+.app-card .app-copy h2 {
+  margin: 0 !important;
+  color: var(--navy-950) !important;
+  font-size: clamp(1.35rem, 3vw, 2.05rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.05em !important;
+}
+
+.app-card .app-copy h2 span {
+  display: block !important;
+  color: var(--yellow) !important;
+}
+
+.app-card .app-copy p {
+  max-width: 270px !important;
+  margin: 8px 0 0 !important;
+  color: var(--navy-950) !important;
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+}
+
+.app-card .store-buttons,
+.app-card .store-buttons.store-badges {
+  width: 100% !important;
+  max-width: 235px !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 7px !important;
+  justify-self: end !important;
+  justify-items: stretch !important;
+  margin: 0 !important;
+}
+
+.app-card .store-buttons a,
+.app-card .store-buttons a.store-badge-link,
+.app-card .store-buttons.store-badges a {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  display: block !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  box-shadow: 0 5px 14px rgba(7, 12, 64, 0.13) !important;
+}
+
+.app-card .store-buttons a::before,
+.app-card .store-buttons a.store-badge-link::before,
+.app-card .store-buttons strong,
+.app-card .store-buttons span {
+  display: none !important;
+  content: none !important;
+}
+
+.app-card .store-buttons a img,
+.app-card .store-buttons a.store-badge-link img,
+.app-card .store-buttons.store-badges img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 6px !important;
+}
+
+@media (max-width: 760px) {
+  .app-section {
+    padding: 6px 0 12px !important;
+  }
+
+  .app-section .container {
+    width: min(100% - 16px, 1120px) !important;
+  }
+
+  .app-card {
+    min-height: 112px !important;
+    grid-template-columns: 74px minmax(0, 1fr) 128px !important;
+    grid-template-areas: "phone copy buttons" !important;
+    gap: 9px !important;
+    padding: 8px 10px 8px 8px !important;
+    border-radius: 5px !important;
+  }
+
+  .app-card .phone-mockup {
+    grid-area: phone !important;
+    width: 74px !important;
+    height: 104px !important;
+  }
+
+  .app-card .phone-mockup::before {
+    left: 3px !important;
+    bottom: -66px !important;
+    width: 58px !important;
+    height: 160px !important;
+    border-width: 3px !important;
+    border-radius: 14px !important;
+  }
+
+  .app-card .phone-screen {
+    left: 8px !important;
+    bottom: -54px !important;
+    width: 50px !important;
+    height: 138px !important;
+    border-radius: 10px !important;
+  }
+
+  .app-card .mini-logo {
+    width: 26px !important;
+    margin-top: 12px !important;
+  }
+
+  .app-card .app-icons {
+    left: 9px !important;
+    right: 9px !important;
+    bottom: 17px !important;
+    gap: 4px !important;
+  }
+
+  .app-card .app-icons i {
+    width: 7px !important;
+    height: 7px !important;
+  }
+
+  .app-card .app-copy {
+    grid-area: copy !important;
+    min-width: 0 !important;
+  }
+
+  .app-card .app-copy h2 {
+    font-size: clamp(1rem, 5.2vw, 1.35rem) !important;
+    line-height: 0.96 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .app-card .app-copy p {
+    max-width: 100% !important;
+    margin-top: 6px !important;
+    font-size: clamp(0.56rem, 2.9vw, 0.74rem) !important;
+    line-height: 1.18 !important;
+    font-weight: 800 !important;
+  }
+
+  .app-card .store-buttons,
+  .app-card .store-buttons.store-badges {
+    grid-area: buttons !important;
+    max-width: 128px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+    justify-self: end !important;
+    margin: 0 !important;
+  }
+
+  .app-card .store-buttons a,
+  .app-card .store-buttons a.store-badge-link,
+  .app-card .store-buttons.store-badges a {
+    border-radius: 5px !important;
+    box-shadow: 0 5px 12px rgba(7, 12, 64, 0.12) !important;
+  }
+
+  .app-card .store-buttons a img,
+  .app-card .store-buttons a.store-badge-link img,
+  .app-card .store-buttons.store-badges img {
+    border-radius: 5px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-section .container {
+    width: min(100% - 12px, 1120px) !important;
+  }
+
+  .app-card {
+    grid-template-columns: 66px minmax(0, 1fr) 116px !important;
+    gap: 7px !important;
+    padding: 7px 8px 7px 6px !important;
+  }
+
+  .app-card .phone-mockup {
+    width: 66px !important;
+    height: 98px !important;
+  }
+
+  .app-card .store-buttons,
+  .app-card .store-buttons.store-badges {
+    max-width: 116px !important;
+    gap: 5px !important;
+  }
+}
+
+/* Ajuste do ícone do botão "Ligar agora" */
+.proof-call-button {
+  gap: 12px !important;
+}
+
+.proof-call-button span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.55rem !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 760px) {
+  .proof-call-button span {
+    font-size: 1.4rem !important;
+  }
+}
+
+/* Ajuste: ícone de localização no rodapé */
+.footer-line.pin::before {
+  content: "\f3c5" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  color: rgb(255, 250, 250) !important;
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 760px) {
+  .footer-line.pin::before {
+    font-size: 1.05rem !important;
+  }
+}
+
+
+/* Footer compacto - desktop e mobile conforme referência */
+.site-footer.site-footer--compact {
+  padding: 18px 0 16px;
+  color: var(--white);
+  background: #f6f8fc;
+}
+
+.footer-compact {
+  overflow: hidden;
+  padding: 24px 38px 12px;
+  border-radius: 12px;
+  color: var(--white);
+  background: #070c40;
+  box-shadow: 0 18px 42px rgba(7, 12, 64, 0.14);
+}
+
+.footer-compact-top {
+  display: grid;
+  grid-template-columns: 1.05fr 1.02fr 1.18fr;
+  align-items: start;
+  gap: 28px;
+}
+
+.footer-compact-item {
+  min-height: 96px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding-right: 26px;
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.footer-compact-item:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.footer-compact-icons {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  flex: 0 0 auto;
+  padding-top: 2px;
+  color: var(--white);
+  font-size: 2.05rem;
+  line-height: 1;
+}
+
+.footer-compact-icons .fa-envelope {
+  font-size: 1.65rem;
+}
+
+.footer-compact-main-icon {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.footer-compact-text h3,
+.footer-compact-address h3 {
+  margin-bottom: 6px;
+  color: var(--yellow);
+  font-size: 0.9rem;
+  line-height: 1.05;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.footer-compact-text p,
+.footer-compact-text a,
+.footer-compact-address p {
+  display: block;
+  color: var(--white);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.footer-compact-text a + a {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.footer-compact-phone {
+  margin-top: 3px;
+  font-size: 1.05rem !important;
+  font-weight: 900 !important;
+}
+
+.footer-compact-address {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 0;
+  padding: 2px 0 14px 70px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.footer-compact-address > i {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  font-size: 2.15rem;
+  line-height: 1;
+}
+
+.footer-compact-address h3 {
+  margin-bottom: 2px;
+}
+
+.footer-compact-address p span {
+  display: inline-block;
+  margin: 0 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.footer-compact-bottom {
+  display: grid;
+  gap: 3px;
+  padding-top: 10px;
+  text-align: center;
+}
+
+.footer-compact-bottom p {
+  color: var(--white);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .site-footer.site-footer--compact {
+    padding: 8px 0 10px;
+  }
+
+  .footer-compact {
+    width: min(100% - 16px, 1120px);
+    padding: 12px 16px 7px;
+    border-radius: 7px;
+  }
+
+  .footer-compact-top {
+    grid-template-columns: 1fr 1fr 1.12fr;
+    gap: 9px;
+  }
+
+  .footer-compact-item {
+    min-height: 58px;
+    gap: 7px;
+    padding-right: 8px;
+  }
+
+  .footer-compact-icons {
+    gap: 8px;
+    font-size: 1.05rem;
+  }
+
+  .footer-compact-icons .fa-envelope {
+    font-size: 0.95rem;
+  }
+
+  .footer-compact-main-icon {
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    font-size: 1.25rem;
+  }
+
+  .footer-compact-text h3,
+  .footer-compact-address h3 {
+    margin-bottom: 2px;
+    font-size: 0.43rem;
+    line-height: 1.05;
+  }
+
+  .footer-compact-text p,
+  .footer-compact-text a,
+  .footer-compact-address p {
+    font-size: 0.48rem;
+    line-height: 1.3;
+    font-weight: 800;
+  }
+
+  .footer-compact-text a + a {
+    margin-top: 4px;
+    font-size: 0.39rem;
+  }
+
+  .footer-compact-phone {
+    font-size: 0.52rem !important;
+  }
+
+  .footer-compact-address {
+    gap: 7px;
+    padding: 3px 0 7px 28px;
+    border-bottom-color: rgba(255, 255, 255, 0.32);
+  }
+
+  .footer-compact-address > i {
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 1.25rem;
+  }
+
+  .footer-compact-address p {
+    white-space: nowrap;
+    font-size: 0.44rem;
+  }
+
+  .footer-compact-address p span {
+    margin: 0 5px;
+  }
+
+  .footer-compact-bottom {
+    gap: 1px;
+    padding-top: 5px;
+  }
+
+  .footer-compact-bottom p {
+    font-size: 0.42rem;
+    line-height: 1.15;
+  }
+}
+
+@media (max-width: 390px) {
+  .footer-compact {
+    padding-inline: 10px;
+  }
+
+  .footer-compact-top {
+    gap: 6px;
+  }
+
+  .footer-compact-item {
+    gap: 5px;
+    padding-right: 6px;
+  }
+
+  .footer-compact-text h3,
+  .footer-compact-address h3 {
+    font-size: 0.38rem;
+  }
+
+  .footer-compact-text p,
+  .footer-compact-text a,
+  .footer-compact-address p {
+    font-size: 0.41rem;
+  }
+
+  .footer-compact-text a + a {
+    font-size: 0.35rem;
+  }
+
+  .footer-compact-address {
+    padding-left: 22px;
+  }
+
+  .footer-compact-bottom p {
+    font-size: 0.37rem;
+  }
+}
+
+/* Ajuste: centralizar bloco de endereço no footer compacto */
+.footer-compact-address {
+  justify-content: center;
+  padding-left: 0;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .footer-compact-address {
+    justify-content: center;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .footer-compact-address {
+    padding-left: 0;
+  }
+}
