@@ -42,6 +42,13 @@ HINOVA_BOLETO_DESCONTO=N
 
 HINOVA_DEBUG_RESPONSE=true
 BOLETO_MAX_DAYS_AFTER_DUE=6
+
+HINOVA_AUTO_LOGIN=true
+HINOVA_LOGIN_URL=https://sga.hinova.com.br/sga/sgav4_novohorizonte/index.php
+HINOVA_LOGIN_USER=COLE_SEU_USUARIO_AQUI
+HINOVA_LOGIN_PASSWORD=COLE_SUA_SENHA_AQUI
+HINOVA_LOGIN_USER_FIELD=usuario
+HINOVA_LOGIN_PASSWORD_FIELD=senha
 ```
 
 > Observação: as rotas internas do SGA normalmente dependem do cookie da sessão logada. O ideal para produção é a Hinova fornecer uma API oficial por token para consulta de boletos.
@@ -52,7 +59,13 @@ BOLETO_MAX_DAYS_AFTER_DUE=6
 
 ## Regra de boleto vencido
 
-Quando a consulta encontrar boleto vencido há mais de **6 dias corridos**, o site passa a exibir **somente o boleto vencido mais antigo**. Os demais boletos ficam ocultos até a regularização. O card mostra a mensagem de atualização e o botão **Ligar 0800 590 0656**.
+Quando a consulta encontrar boleto vencido há mais de **6 dias corridos**, a regra é aplicada **individualmente por veículo/placa**:
+
+- Para cada veículo, o sistema analisa somente os boletos daquele veículo.
+- Se o veículo tiver boleto vencido acima do prazo, o site exibe apenas o boleto vencido mais antigo desse veículo e oculta os demais boletos da mesma placa.
+- Se outro veículo do mesmo associado não tiver boleto vencido acima do prazo, todos os boletos disponíveis desse outro veículo continuam aparecendo normalmente.
+- A regra é repetida veículo por veículo até finalizar todos os veículos do associado.
+- O boleto bloqueado mostra a mensagem de atualização e o botão **Ligar 0800 590 0656**.
 
 Configure o limite em:
 
@@ -78,3 +91,41 @@ BOLETO_MAX_DAYS_AFTER_DUE=6
 ## Autor
 
 Desenvolvido por **Carlos Lima**.
+
+
+## Regra final por placa
+
+A consulta agora trata cada placa separadamente:
+
+- **Placa cancelada:** exibe somente a mensagem de placa cancelada, sem listar todos os boletos cancelados.
+- **Placa com 2 ou mais boletos vencidos há mais de 6 dias:** exibe somente o boleto vencido mais antigo, marca como **Placa inativa** e orienta ligar para **0800 590 0656, opção 2**.
+- **Placa com 1 boleto vencido há mais de 6 dias:** exibe somente esse boleto vencido e orienta regularizar no financeiro pelo **0800 590 0656, opção 2**.
+- **Placa em dia:** exibe os boletos disponíveis para baixar pelo site.
+
+Boletos cancelados, baixados ou pagos não aparecem como boletos disponíveis para download.
+
+
+## Login automático no SGA
+
+Além do `HINOVA_COOKIE`, a API agora aceita login automático. O fluxo é:
+
+1. A API tenta consultar usando o cookie atual.
+2. Se o SGA retornar tela de login, falha de autenticação ou uma sessão vazia, a API tenta acessar a tela de login.
+3. Ela envia usuário e senha configurados nas variáveis de ambiente.
+4. O cookie recebido é guardado temporariamente em memória e usado nas próximas consultas.
+
+Configure no `.env.local` ou na Vercel:
+
+```env
+HINOVA_AUTO_LOGIN=true
+HINOVA_LOGIN_URL=https://sga.hinova.com.br/sga/sgav4_novohorizonte/index.php
+HINOVA_LOGIN_USER=COLE_SEU_USUARIO_AQUI
+HINOVA_LOGIN_PASSWORD=COLE_SUA_SENHA_AQUI
+HINOVA_LOGIN_USER_FIELD=usuario
+HINOVA_LOGIN_PASSWORD_FIELD=senha
+HINOVA_LOGIN_CACHE_MS=1200000
+```
+
+Se a tela de login tiver captcha, dupla autenticação ou algum campo obrigatório que não venha no formulário, o login automático pode falhar. Nesse caso, use `HINOVA_LOGIN_EXTRA_FIELDS` para informar campos adicionais ou mantenha o `HINOVA_COOKIE` atualizado manualmente.
+
+**Importante:** nunca coloque usuário, senha, token ou cookie dentro do HTML/JS público. Use apenas `.env.local` no desenvolvimento e variáveis de ambiente na Vercel.

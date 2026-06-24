@@ -1,8 +1,14 @@
 const DEFAULT_ASSOCIADO_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaAssociados.php';
 const DEFAULT_ASSOCIADO_DADOS_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaAssociadoDados.php';
 const DEFAULT_BOLETOS_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaListaBoletoAJAX.php';
+const DEFAULT_VEICULOS_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaPlacasVeiculo.php';
 const DEFAULT_ERROR_MESSAGE = 'Não foi possível concluir a consulta no SGA/Hinova.';
-const UPDATE_MESSAGE = 'Este boleto está vencido há mais de 6 dias e não está disponível para emissão pelo site. Entre em contato com o setor financeiro da Novo Horizonte para atualizar seu boleto.';
+const UPDATE_MESSAGE = 'Este boleto está vencido há mais de 6 dias e não está disponível para emissão pelo site. Por favor, regularize no setor financeiro da Novo Horizonte pelo 0800 590 0656, opção 2.';
+const INACTIVE_PLATE_MESSAGE = 'Esta placa está inativa por possuir mais de um boleto vencido há mais de 6 dias. Entre em contato com o financeiro da Novo Horizonte pelo 0800 590 0656, opção 2.';
+const CANCELED_PLATE_MESSAGE = 'Esta placa está cancelada. Entre em contato com o atendimento financeiro da Novo Horizonte pelo 0800 590 0656, opção 2.';
+const DEFAULT_LOGIN_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/index.php';
+let cachedSgaCookie = '';
+let cachedSgaCookieCreatedAt = 0;
 
 function getCleanInput(value) {
   return String(value || '').trim();
@@ -18,6 +24,182 @@ function isTrue(value) {
 
 function getEnv(name, fallback = '') {
   return process.env[name] || fallback;
+}
+
+
+function getEffectiveCookie() {
+  return cachedSgaCookie || process.env.HINOVA_COOKIE || '';
+}
+
+function canAutoLogin() {
+  return Boolean(process.env.HINOVA_LOGIN_USER && process.env.HINOVA_LOGIN_PASSWORD);
+}
+
+function isAutoLoginEnabled() {
+  return canAutoLogin() && String(process.env.HINOVA_AUTO_LOGIN || 'true').toLowerCase() !== 'false';
+}
+
+function splitSetCookieHeader(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  return raw.split(/,(?=\s*[^;,\s]+=)/g).map((item) => item.trim()).filter(Boolean);
+}
+
+function getSetCookieValues(headers) {
+  if (!headers) return [];
+  if (typeof headers.getSetCookie === 'function') return headers.getSetCookie();
+  const raw = headers.get?.('set-cookie') || '';
+  return splitSetCookieHeader(raw);
+}
+
+function cookieNameValue(setCookie = '') {
+  return String(setCookie || '').split(';')[0].trim();
+}
+
+function mergeCookieStrings(...cookieStrings) {
+  const map = new Map();
+
+  cookieStrings
+    .flatMap((value) => Array.isArray(value) ? value : String(value || '').split(';'))
+    .map((value) => cookieNameValue(value))
+    .filter((value) => value && value.includes('='))
+    .forEach((pair) => {
+      const name = pair.slice(0, pair.indexOf('=')).trim();
+      if (!name) return;
+      map.set(name, pair);
+    });
+
+  return [...map.values()].join('; ');
+}
+
+function getAttr(tag = '', attr = '') {
+  const pattern = new RegExp(`${attr}\\s*=\\s*(["'])(.*?)\\1`, 'i');
+  return String(tag || '').match(pattern)?.[2] || '';
+}
+
+function parseLoginFormFields(html = '') {
+  const params = new URLSearchParams();
+  const inputRegex = /<input\b[^>]*>/gi;
+
+  for (const match of String(html || '').matchAll(inputRegex)) {
+    const tag = match[0];
+    const name = getAttr(tag, 'name');
+    if (!name) continue;
+
+    const type = getAttr(tag, 'type').toLowerCase();
+    if (['submit', 'button', 'image', 'file'].includes(type)) continue;
+
+    params.set(name, decodeHtmlEntities(getAttr(tag, 'value')));
+  }
+
+  return params;
+}
+
+function getLoginFormAction(html = '', fallbackUrl = DEFAULT_LOGIN_URL) {
+  const formTag = String(html || '').match(/<form\b[^>]*>/i)?.[0] || '';
+  const action = getAttr(formTag, 'action');
+  if (!action) return fallbackUrl;
+
+  try {
+    return new URL(decodeHtmlEntities(action), fallbackUrl).toString();
+  } catch {
+    return fallbackUrl;
+  }
+}
+
+function applyExtraLoginFields(params) {
+  const extra = process.env.HINOVA_LOGIN_EXTRA_FIELDS;
+  if (!extra) return;
+
+  try {
+    const json = JSON.parse(extra);
+    Object.entries(json).forEach(([key, value]) => params.set(key, String(value ?? '')));
+    return;
+  } catch {
+    // Também aceita formato URLSearchParams: campo=valor&outro=valor
+  }
+
+  const extraParams = new URLSearchParams(extra);
+  for (const [key, value] of extraParams.entries()) {
+    params.set(key, value);
+  }
+}
+
+function basicBrowserHeaders({ referer = '', cookie = '', form = false } = {}) {
+  const headers = {
+    Accept: form ? 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' : '*/*',
+    'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+  };
+
+  if (form) headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+  if (referer) headers.Referer = referer;
+  if (cookie) headers.Cookie = cookie;
+  headers.Origin = process.env.HINOVA_ORIGIN || 'https://sga.hinova.com.br';
+
+  return headers;
+}
+
+async function loginSga(force = false) {
+  if (!isAutoLoginEnabled()) return '';
+
+  const ttlMs = Number(process.env.HINOVA_LOGIN_CACHE_MS || 20 * 60 * 1000);
+  if (!force && cachedSgaCookie && Date.now() - cachedSgaCookieCreatedAt < ttlMs) {
+    return cachedSgaCookie;
+  }
+
+  const loginUrl = getEnv('HINOVA_LOGIN_URL', DEFAULT_LOGIN_URL);
+  const loginGet = await fetch(loginUrl, {
+    method: 'GET',
+    headers: basicBrowserHeaders(),
+    redirect: 'manual',
+  });
+
+  const loginHtml = await loginGet.text();
+  let cookie = mergeCookieStrings(process.env.HINOVA_COOKIE || '', getSetCookieValues(loginGet.headers));
+
+  const params = parseLoginFormFields(loginHtml);
+  const userField = getEnv('HINOVA_LOGIN_USER_FIELD', 'usuario');
+  const passwordField = getEnv('HINOVA_LOGIN_PASSWORD_FIELD', 'senha');
+  params.set(userField, process.env.HINOVA_LOGIN_USER);
+  params.set(passwordField, process.env.HINOVA_LOGIN_PASSWORD);
+  applyExtraLoginFields(params);
+
+  const postUrl = getEnv('HINOVA_LOGIN_POST_URL', getLoginFormAction(loginHtml, loginUrl));
+  const postResponse = await fetch(postUrl, {
+    method: 'POST',
+    headers: basicBrowserHeaders({ referer: loginUrl, cookie, form: true }),
+    body: params.toString(),
+    redirect: 'manual',
+  });
+
+  cookie = mergeCookieStrings(cookie, getSetCookieValues(postResponse.headers));
+  let postText = '';
+
+  const location = postResponse.headers.get('location');
+  if (location && postResponse.status >= 300 && postResponse.status < 400) {
+    const nextUrl = new URL(location, postUrl).toString();
+    const followResponse = await fetch(nextUrl, {
+      method: 'GET',
+      headers: basicBrowserHeaders({ referer: postUrl, cookie }),
+      redirect: 'manual',
+    });
+    cookie = mergeCookieStrings(cookie, getSetCookieValues(followResponse.headers));
+    postText = await followResponse.text().catch(() => '');
+  } else {
+    postText = await postResponse.text().catch(() => '');
+  }
+
+  if (!cookie) {
+    const error = new Error('Não foi possível obter cookie ao tentar login automático no SGA.');
+    error.status = 401;
+    error.details = postText.slice(0, 1200);
+    throw error;
+  }
+
+  cachedSgaCookie = cookie;
+  cachedSgaCookieCreatedAt = Date.now();
+  return cachedSgaCookie;
 }
 
 function decodeHtmlEntities(value = '') {
@@ -74,7 +256,8 @@ function buildHeaders({ form = false, referer = '' } = {}) {
       : `${authPrefix} ${token}`;
   }
 
-  if (process.env.HINOVA_COOKIE) headers.Cookie = process.env.HINOVA_COOKIE;
+  const cookie = getEffectiveCookie();
+  if (cookie) headers.Cookie = cookie;
 
   headers.Referer = referer || process.env.HINOVA_REFERER || 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/associado/consultarAssociado.php';
   headers.Origin = process.env.HINOVA_ORIGIN || 'https://sga.hinova.com.br';
@@ -91,6 +274,27 @@ async function fetchText(url, options = {}) {
     error.status = response.status;
     error.details = text.slice(0, 1600);
     throw error;
+  }
+
+  return text;
+}
+
+async function fetchSgaText(url, { method = 'GET', form = false, referer = '', body = null, retryOnAuth = true } = {}) {
+  const options = {
+    method,
+    headers: buildHeaders({ form, referer }),
+    ...(body ? { body } : {}),
+  };
+
+  let text = await fetchText(url, options);
+
+  if (retryOnAuth && isAutoLoginEnabled() && isLoginHtml(text)) {
+    await loginSga(true);
+    text = await fetchText(url, {
+      method,
+      headers: buildHeaders({ form, referer }),
+      ...(body ? { body } : {}),
+    });
   }
 
   return text;
@@ -237,10 +441,13 @@ function jsStringUnescape(value = '') {
     .replace(/\\t/g, '\t');
 }
 
-function rebuildStringBoletoHtml(responseText = '') {
+function rebuildNamedStringHtml(responseText = '', variableName = '') {
   const fragments = [];
-  const singleQuoteRegex = /stringBoleto\s*\+=\s*'((?:\\'|[^'])*)';/gi;
-  const doubleQuoteRegex = /stringBoleto\s*\+=\s*"((?:\\"|[^"])*)";/gi;
+  if (!variableName) return '';
+
+  const escapedName = String(variableName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const singleQuoteRegex = new RegExp(`${escapedName}\\s*\\+=\\s*'((?:\\\\'|[^'])*)';`, 'gi');
+  const doubleQuoteRegex = new RegExp(`${escapedName}\\s*\\+=\\s*"((?:\\\\"|[^"])*)";`, 'gi');
 
   for (const match of String(responseText).matchAll(singleQuoteRegex)) {
     fragments.push(jsStringUnescape(match[1] || ''));
@@ -251,6 +458,14 @@ function rebuildStringBoletoHtml(responseText = '') {
   }
 
   return fragments.join('');
+}
+
+function rebuildStringBoletoHtml(responseText = '') {
+  return rebuildNamedStringHtml(responseText, 'stringBoleto');
+}
+
+function rebuildStringVeiculoHtml(responseText = '') {
+  return rebuildNamedStringHtml(responseText, 'stringVeiculo');
 }
 
 function extractPlacaForNumero(html, numero) {
@@ -475,24 +690,497 @@ function sortBoletosByDueDate(boletos = []) {
   });
 }
 
-function applyOverdueDisplayRule(boletos = []) {
-  const blockedBoletos = sortBoletosByDueDate(
-    boletos.filter((boleto) => boleto && boleto.disponivel === false)
-  );
+function normalizePlateKey(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+}
 
-  if (!blockedBoletos.length) {
+function getPlateFromBoleto(boleto = {}) {
+  const values = [boleto.placa, boleto.veiculo, boleto.titulo, boleto.title]
+    .map((value) => String(value || ''))
+    .filter(Boolean);
+
+  for (const value of values) {
+    const direct = normalizePlateKey(value);
+    if (/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(direct)) return direct;
+
+    const found = String(value).match(/[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}/i)?.[0] || '';
+    const normalized = normalizePlateKey(found);
+    if (normalized) return normalized;
+  }
+
+  return '';
+}
+
+function getBoletoVehicleKey(boleto = {}, index = 0) {
+  const placaKey = getPlateFromBoleto(boleto);
+  if (placaKey) return `placa:${placaKey}`;
+
+  // No retorno Financeiro do SGA, o campo "controle" costuma se repetir nas
+  // parcelas do mesmo veículo. Ele é o melhor fallback quando a placa não foi
+  // extraída do HTML.
+  const controleKey = String(boleto.controle || boleto.idControle || boleto.id_contrato || '')
+    .replace(/\D/g, '')
+    .trim();
+  if (controleKey) return `controle:${controleKey}`;
+
+  const veiculoKey = normalizePlateKey(boleto.veiculo || boleto.tipo || '');
+  if (veiculoKey) return `veiculo:${veiculoKey}`;
+
+  // Último fallback: não mistura todos em um grupo único se o SGA vier sem
+  // placa/controle. Isso evita esconder boletos de veículos diferentes por erro.
+  const idKey = String(boleto.id || boleto.numero || boleto.nossoNumero || index).trim();
+  return `sem-identificacao:${idKey || index}`;
+}
+
+function getBoletoVehicleLabel(group = {}, boleto = {}) {
+  const placa = boleto.placa || group.placa || '';
+  if (placa) return placa;
+  if (boleto.controle || group.controle) return `Controle ${boleto.controle || group.controle}`;
+  return group.key || 'Veículo sem identificação';
+}
+
+function getManualCanceledPlates() {
+  return String(process.env.HINOVA_PLACAS_CANCELADAS || '')
+    .split(/[;,\n]/g)
+    .map((plate) => normalizePlateKey(plate))
+    .filter((plate) => /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(plate));
+}
+
+function extractPlateKeysFromText(text = '') {
+  const plates = new Set();
+  const raw = decodeHtmlEntities(stripTags(String(text || '')));
+  const matches = raw.match(/[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}/gi) || [];
+
+  matches.forEach((match) => {
+    const plate = normalizePlateKey(match);
+    if (/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(plate)) plates.add(plate);
+  });
+
+  return [...plates];
+}
+
+function contextLooksLikeCanceledVehicle(context = '') {
+  const normalized = normalizeStatus(stripTags(decodeHtmlEntities(context)));
+  if (!normalized) return false;
+
+  const hasVehicleWord = normalized.includes('PLACA') || normalized.includes('VEICULO') || normalized.includes('VEICULO') || normalized.includes('SITUACAO');
+  const hasCanceledWord = normalized.includes('CANCELAD') || normalized.includes('EXCLUID') || normalized.includes('INATIV');
+
+  // Evita considerar apenas o nome de arquivo do ícone de boleto cancelado como placa cancelada.
+  const onlyBoletoIcon = normalized.includes('BOLETO_CANCELADO') && !hasVehicleWord;
+
+  return hasVehicleWord && hasCanceledWord && !onlyBoletoIcon;
+}
+
+function extractCanceledPlatesFromRows(html = '') {
+  const canceled = new Set();
+  const rows = String(html || '').match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+
+  rows.forEach((row) => {
+    if (!contextLooksLikeCanceledVehicle(row)) return;
+    extractPlateKeysFromText(row).forEach((plate) => canceled.add(plate));
+  });
+
+  return [...canceled];
+}
+
+function extractCanceledVehiclePlatesFromAssociadoDados(responseText = '') {
+  const canceled = new Set(getManualCanceledPlates());
+  const sources = [
+    rebuildStringVeiculoHtml(responseText),
+    String(responseText || ''),
+  ].filter(Boolean);
+
+  sources.forEach((source) => {
+    extractCanceledPlatesFromRows(source).forEach((plate) => canceled.add(plate));
+
+    const text = String(source || '');
+    const plateRegex = /[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}/gi;
+    for (const match of text.matchAll(plateRegex)) {
+      const plate = normalizePlateKey(match[0]);
+      if (!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(plate)) continue;
+
+      const start = Math.max(0, match.index - 500);
+      const end = Math.min(text.length, match.index + match[0].length + 500);
+      const context = text.slice(start, end);
+
+      if (contextLooksLikeCanceledVehicle(context)) {
+        canceled.add(plate);
+      }
+    }
+  });
+
+  return [...canceled];
+}
+
+
+function parseCanceledVehiclePlatesFromText(responseText = '') {
+  const canceled = new Set();
+  const source = String(responseText || '');
+  if (!source.trim()) return [];
+
+  const decoded = decodeHtmlEntities(source);
+  const htmlChunks = [
+    ...(decoded.match(/<tr\b[\s\S]*?<\/tr>/gi) || []),
+    ...(decoded.match(/<option\b[\s\S]*?<\/option>/gi) || []),
+    ...(decoded.match(/<li\b[\s\S]*?<\/li>/gi) || []),
+    ...(decoded.match(/<div\b[\s\S]*?<\/div>/gi) || []),
+  ];
+
+  htmlChunks.forEach((chunk) => {
+    if (!contextLooksLikeCanceledVehicle(chunk)) return;
+    extractPlateKeysFromText(chunk).forEach((plate) => canceled.add(plate));
+  });
+
+  const plain = normalizeStatus(stripTags(decoded));
+  const plateRegex = /[A-Z]{3}[-\s]?[0-9][A-Z0-9][0-9]{2}/gi;
+  for (const match of decoded.matchAll(plateRegex)) {
+    const plate = normalizePlateKey(match[0]);
+    if (!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(plate)) continue;
+
+    const start = Math.max(0, match.index - 700);
+    const end = Math.min(decoded.length, match.index + match[0].length + 700);
+    const context = decoded.slice(start, end);
+
+    if (contextLooksLikeCanceledVehicle(context)) {
+      canceled.add(plate);
+    }
+  }
+
+  // Fallback para respostas sem HTML estruturado, ex: "ABC1D23 - CANCELADO".
+  for (const match of plain.matchAll(/([A-Z]{3}[0-9][A-Z0-9][0-9]{2})[\s\S]{0,120}(CANCELAD|EXCLUID|INATIV)/gi)) {
+    const plate = normalizePlateKey(match[1]);
+    if (plate) canceled.add(plate);
+  }
+  for (const match of plain.matchAll(/(CANCELAD|EXCLUID|INATIV)[\s\S]{0,120}([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/gi)) {
+    const plate = normalizePlateKey(match[2]);
+    if (plate) canceled.add(plate);
+  }
+
+  return [...canceled];
+}
+
+function getVehicleLookupUrls() {
+  const urls = [];
+  const configured = String(process.env.HINOVA_VEICULOS_URL || '')
+    .split(/[;,\n]/g)
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  urls.push(...configured);
+  urls.push(DEFAULT_VEICULOS_URL);
+  urls.push('https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaVeiculoDados.php');
+  urls.push('https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaDadosAssociadoVeiculoAgregado.php');
+
+  return [...new Set(urls)];
+}
+
+async function consultarPlacasCanceladasAssociado(associado) {
+  if (isTrue(process.env.HINOVA_DISABLE_VEICULOS_LOOKUP)) {
+    return { placasCanceladas: [], attempts: [] };
+  }
+
+  const attempts = [];
+  const placasCanceladas = new Set();
+  const keys = buildAssociadoDadosKeyCandidates(associado).slice(0, 4);
+  const urls = getVehicleLookupUrls();
+
+  for (const baseUrl of urls) {
+    for (const key of keys) {
+      try {
+        const url = new URL(baseUrl);
+        if (!url.searchParams.has('key')) url.searchParams.set('key', key);
+
+        const html = await fetchSgaText(url.toString(), {
+          method: 'GET',
+          referer: 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/associado/consultarAssociado.php',
+        });
+
+        const found = parseCanceledVehiclePlatesFromText(html);
+        found.forEach((plate) => placasCanceladas.add(plate));
+
+        attempts.push({
+          url: url.toString(),
+          key,
+          tamanho: html.length,
+          placasCanceladas: found,
+          preview: html.slice(0, 600),
+        });
+      } catch (error) {
+        attempts.push({
+          url: baseUrl,
+          key,
+          erro: error.message || 'Falha ao consultar veículos do associado.',
+          status: error.status || null,
+          details: String(error.details || '').slice(0, 500),
+        });
+      }
+    }
+  }
+
+  return { placasCanceladas: [...placasCanceladas], attempts };
+}
+
+function buildCanceledPlateNotice(plate) {
+  return {
+    id: `placa-cancelada-${plate}`,
+    numero: '',
+    placa: plate,
+    veiculo: `Placa ${plate}`,
+    valor: '',
+    vencimento: '',
+    status: 'PLACA CANCELADA',
+    pdf: '',
+    codigoBarras: '',
+    linhaDigitavel: '',
+    disponivel: false,
+    tipoExibicao: 'placa_cancelada',
+    mensagem: CANCELED_PLATE_MESSAGE,
+  };
+}
+
+function normalizeStatus(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim();
+}
+
+function isCanceledBoleto(boleto = {}) {
+  const status = normalizeStatus(boleto.status || boleto.situacao || boleto.situacaoTitulo || '');
+  const allText = normalizeStatus([
+    boleto.status,
+    boleto.situacao,
+    boleto.situacaoTitulo,
+    boleto.statusPlaca,
+    boleto.situacaoPlaca,
+    boleto.veiculo,
+    boleto.tipo,
+    boleto.mensagem,
+  ].filter(Boolean).join(' '));
+
+  return status.includes('CANCELADO') ||
+    status.includes('EXCLUIDO') ||
+    allText.includes('PLACA CANCELADA') ||
+    allText.includes('VEICULO CANCELADO') ||
+    allText.includes('VEICULO EXCLUIDO');
+}
+
+function hasCanceledPlateSignal(group = {}) {
+  const text = normalizeStatus(group.boletos.map((boleto) => [
+    boleto.statusPlaca,
+    boleto.situacaoPlaca,
+    boleto.statusVeiculo,
+    boleto.situacaoVeiculo,
+    boleto.veiculo,
+    boleto.mensagem,
+  ].filter(Boolean).join(' ')).join(' '));
+
+  if (text.includes('PLACA CANCELADA') || text.includes('VEICULO CANCELADO')) return true;
+  if (!group.boletos.length) return false;
+
+  const nonEmptyStatuses = group.boletos
+    .map((boleto) => normalizeStatus(boleto.status || boleto.situacao || ''))
+    .filter(Boolean);
+
+  // Quando todos os títulos retornados daquela placa vêm como cancelados/excluídos,
+  // tratamos a placa como cancelada para não listar vários boletos cancelados.
+  return nonEmptyStatuses.length > 0 && group.boletos.every(isCanceledBoleto);
+}
+
+function isOpenOrIssueableBoleto(boleto = {}) {
+  if (isCanceledBoleto(boleto)) return false;
+
+  const status = normalizeStatus(boleto.status || boleto.situacao || '');
+  if (status.includes('BAIXADO')) return false;
+  if (status.includes('PAGO')) return false;
+
+  return true;
+}
+
+function buildPlateNoticeBoleto(group, type, baseBoleto = {}) {
+  const placaLabel = getBoletoVehicleLabel(group, baseBoleto);
+  const placa = group.placa || baseBoleto.placa || (String(placaLabel).startsWith('Controle ') ? '' : placaLabel);
+
+  if (type === 'cancelada') {
     return {
-      boletos,
-      bloqueadoPorBoletoVencido: false,
-      boletoVencidoSelecionado: null,
+      id: `placa-cancelada-${group.key}`,
+      numero: '',
+      placa,
+      veiculo: placa ? `Placa ${placa}` : placaLabel,
+      valor: '',
+      vencimento: '',
+      status: 'PLACA CANCELADA',
+      pdf: '',
+      codigoBarras: '',
+      linhaDigitavel: '',
+      disponivel: false,
+      tipoExibicao: 'placa_cancelada',
+      mensagem: CANCELED_PLATE_MESSAGE,
     };
   }
 
-  const selected = blockedBoletos[0];
+  return null;
+}
+
+function applyOverdueDisplayRule(boletos = [], canceledVehiclePlates = []) {
+  const groups = new Map();
+  const limiteDias = getBoletoMaxDaysAfterDue();
+  const canceledPlateKeys = new Set([
+    ...getManualCanceledPlates(),
+    ...canceledVehiclePlates.map((plate) => normalizePlateKey(plate)),
+  ].filter((plate) => /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(plate)));
+
+
+  boletos.forEach((boleto, index) => {
+    if (!boleto) return;
+
+    const key = getBoletoVehicleKey(boleto, index);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        placa: boleto.placa || '',
+        controle: boleto.controle || '',
+        boletos: [],
+      });
+    }
+
+    const group = groups.get(key);
+    if (!group.placa && boleto.placa) group.placa = boleto.placa;
+    if (!group.controle && boleto.controle) group.controle = boleto.controle;
+    group.boletos.push(boleto);
+  });
+
+  const filteredBoletos = [];
+  const gruposBloqueados = [];
+  const gruposAnalisados = [];
+  const placasCanceladas = [];
+  const placasInativas = [];
+
+  canceledPlateKeys.forEach((plate) => {
+    const key = `placa:${plate}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        placa: plate,
+        controle: '',
+        boletos: [],
+        placaCanceladaDetectada: true,
+      });
+    } else {
+      groups.get(key).placaCanceladaDetectada = true;
+    }
+  });
+
+  groups.forEach((group) => {
+    const boletosOrdenados = sortBoletosByDueDate(group.boletos);
+    const firstBoleto = boletosOrdenados[0] || group.boletos[0] || {};
+    const placaLabel = getBoletoVehicleLabel(group, firstBoleto);
+
+    const normalizedGroupPlate = normalizePlateKey(group.placa || firstBoleto.placa || '');
+    if (group.placaCanceladaDetectada || (normalizedGroupPlate && canceledPlateKeys.has(normalizedGroupPlate)) || hasCanceledPlateSignal(group)) {
+      const notice = buildPlateNoticeBoleto(group, 'cancelada', firstBoleto);
+      filteredBoletos.push(notice);
+      placasCanceladas.push(placaLabel);
+
+      gruposAnalisados.push({
+        key: group.key,
+        placa: placaLabel,
+        controle: group.controle || '',
+        totalBoletosDoVeiculo: group.boletos.length,
+        totalBoletosExibidos: 1,
+        regraAplicada: 'placa-cancelada',
+      });
+      return;
+    }
+
+    const boletosValidosParaAnalise = boletosOrdenados.filter(isOpenOrIssueableBoleto);
+    const boletosVencidosAcimaDoPrazo = boletosValidosParaAnalise.filter((boleto) => {
+      return getBoletoOverdueDays(boleto?.vencimento) > limiteDias;
+    });
+
+    if (boletosVencidosAcimaDoPrazo.length >= 2) {
+      const selected = {
+        ...boletosVencidosAcimaDoPrazo[0],
+        disponivel: false,
+        status: 'PLACA INATIVA',
+        tipoExibicao: 'placa_inativa',
+        mensagem: INACTIVE_PLATE_MESSAGE,
+      };
+
+      filteredBoletos.push(selected);
+      placasInativas.push(placaLabel);
+
+      const blockedInfo = {
+        key: group.key,
+        placa: placaLabel,
+        controle: group.controle || selected.controle || '',
+        totalBoletosDoVeiculo: group.boletos.length,
+        totalBoletosVencidosAcimaDoPrazo: boletosVencidosAcimaDoPrazo.length,
+        boletoVencidoMaisAntigo: selected,
+      };
+
+      gruposBloqueados.push(blockedInfo);
+      gruposAnalisados.push({ ...blockedInfo, totalBoletosExibidos: 1, regraAplicada: 'placa-inativa-por-atraso' });
+      return;
+    }
+
+    if (boletosVencidosAcimaDoPrazo.length === 1) {
+      const selected = {
+        ...boletosVencidosAcimaDoPrazo[0],
+        disponivel: false,
+        tipoExibicao: 'boleto_vencido',
+        mensagem: UPDATE_MESSAGE,
+      };
+
+      filteredBoletos.push(selected);
+
+      const blockedInfo = {
+        key: group.key,
+        placa: placaLabel,
+        controle: group.controle || selected.controle || '',
+        totalBoletosDoVeiculo: group.boletos.length,
+        totalBoletosVencidosAcimaDoPrazo: 1,
+        boletoVencidoMaisAntigo: selected,
+      };
+
+      gruposBloqueados.push(blockedInfo);
+      gruposAnalisados.push({ ...blockedInfo, totalBoletosExibidos: 1, regraAplicada: 'um-boleto-vencido' });
+      return;
+    }
+
+    // Placa sem atraso acima do prazo: mostra somente boletos realmente disponíveis
+    // para baixar pelo site, sem exibir títulos cancelados, baixados ou pagos.
+    const boletosDisponiveis = boletosValidosParaAnalise.filter((boleto) => boleto.disponivel !== false);
+    filteredBoletos.push(...boletosDisponiveis);
+
+    gruposAnalisados.push({
+      key: group.key,
+      placa: placaLabel,
+      controle: group.controle || '',
+      totalBoletosDoVeiculo: group.boletos.length,
+      totalBoletosExibidos: boletosDisponiveis.length,
+      regraAplicada: 'placa-em-dia-boletos-disponiveis',
+    });
+  });
+
   return {
-    boletos: [selected],
-    bloqueadoPorBoletoVencido: true,
-    boletoVencidoSelecionado: selected,
+    boletos: filteredBoletos,
+    bloqueadoPorBoletoVencido: gruposBloqueados.length > 0,
+    possuiPlacaCancelada: placasCanceladas.length > 0,
+    possuiPlacaInativa: placasInativas.length > 0,
+    boletoVencidoSelecionado: gruposBloqueados[0]?.boletoVencidoMaisAntigo || null,
+    gruposBloqueados,
+    gruposAnalisados,
+    placasBloqueadas: gruposBloqueados.map((group) => group.placa).filter(Boolean),
+    placasCanceladas,
+    placasInativas,
+    totalGrupos: groups.size,
   };
 }
 
@@ -506,22 +1194,29 @@ async function consultarAssociadoDados(associado) {
     const url = new URL(associadoDadosBaseUrl);
     url.searchParams.set(keyField, key);
 
-    const html = await fetchText(url.toString(), {
+    const html = await fetchSgaText(url.toString(), {
       method: 'GET',
-      headers: buildHeaders({ referer: 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/associado/consultarAssociado.php' }),
+      referer: 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/associado/consultarAssociado.php',
     });
 
     const boletos = parseBoletosFinanceiroFromAssociadoDados(html, associadoDadosBaseUrl);
+    const placasCanceladasDetectadas = extractCanceledVehiclePlatesFromAssociadoDados(html);
     const associadoAtualizado = updateAssociadoFromDados(associado, html);
 
-    attempts.push({ key, tamanho: html.length, boletos: boletos.length, preview: html.slice(0, 1200) });
+    attempts.push({
+      key,
+      tamanho: html.length,
+      boletos: boletos.length,
+      placasCanceladasDetectadas,
+      preview: html.slice(0, 1200),
+    });
 
-    if (boletos.length) {
-      return { associado: associadoAtualizado, boletos, raw: html, key, attempts };
+    if (boletos.length || placasCanceladasDetectadas.length) {
+      return { associado: associadoAtualizado, boletos, placasCanceladasDetectadas, raw: html, key, attempts };
     }
   }
 
-  return { associado, boletos: [], raw: '', key: candidates[0] || '', attempts };
+  return { associado, boletos: [], placasCanceladasDetectadas: [], raw: '', key: candidates[0] || '', attempts };
 }
 
 async function localizarAssociado(documento) {
@@ -530,12 +1225,18 @@ async function localizarAssociado(documento) {
   const url = new URL(associadoSearchUrl);
   url.searchParams.set(associadoSearchField, documento);
 
-  const xml = await fetchText(url.toString(), {
-    method: 'GET',
-    headers: buildHeaders(),
-  });
+  let xml = await fetchSgaText(url.toString(), { method: 'GET' });
 
-  const associado = parseAssociadoXml(xml, documento);
+  let associado = parseAssociadoXml(xml, documento);
+
+  // Em algumas sessões expiradas o SGA não retorna tela de login; ele apenas
+  // devolve <results></results>. Nesse caso tentamos renovar a sessão e consultar novamente.
+  if (!associado && isAutoLoginEnabled()) {
+    await loginSga(true);
+    xml = await fetchSgaText(url.toString(), { method: 'GET', retryOnAuth: false });
+    associado = parseAssociadoXml(xml, documento);
+  }
+
   if (!associado) {
     const error = new Error('Associado não localizado para o CPF/CNPJ informado.');
     error.status = 404;
@@ -571,9 +1272,10 @@ async function consultarBoletosListaAjax(associado) {
 
   situacoes.forEach((situacao) => payload.append('filtro[boletosemitidos][id_situacao][]', situacao));
 
-  const html = await fetchText(boletosListUrl, {
+  const html = await fetchSgaText(boletosListUrl, {
     method: 'POST',
-    headers: buildHeaders({ form: true, referer: 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/financeiro/listaBoleto.php' }),
+    form: true,
+    referer: 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/financeiro/listaBoleto.php',
     body: payload.toString(),
   });
 
@@ -599,10 +1301,18 @@ export default async function handler(req, res) {
 
     const { associado, raw: associadoRaw } = await localizarAssociado(cleanDocument);
 
-    let dadosResult = { associado, boletos: [], raw: '', key: '', attempts: [] };
+    let dadosResult = { associado, boletos: [], placasCanceladasDetectadas: [], raw: '', key: '', attempts: [] };
+    let veiculosResult = { placasCanceladas: [], attempts: [] };
     if (!isTrue(process.env.HINOVA_DISABLE_ASSOCIADO_DADOS)) {
       dadosResult = await consultarAssociadoDados(associado);
     }
+
+    veiculosResult = await consultarPlacasCanceladasAssociado(dadosResult.associado || associado);
+    const placasCanceladasDetectadas = [...new Set([
+      ...(dadosResult.placasCanceladasDetectadas || []),
+      ...(veiculosResult.placasCanceladas || []),
+    ].map((plate) => normalizePlateKey(plate)).filter(Boolean))];
+    dadosResult.placasCanceladasDetectadas = placasCanceladasDetectadas;
 
     let boletos = dadosResult.boletos || [];
     let listaResult = { boletos: [], raw: '', payload: '' };
@@ -614,15 +1324,13 @@ export default async function handler(req, res) {
 
     const associadoFinal = dadosResult.associado || associado;
     const totalBoletosAntesDaRegra = boletos.length;
-    const regraExibicao = applyOverdueDisplayRule(boletos);
+    const regraExibicao = applyOverdueDisplayRule(boletos, dadosResult.placasCanceladasDetectadas || []);
     boletos = regraExibicao.boletos;
 
     return res.status(200).json({
-      message: regraExibicao.bloqueadoPorBoletoVencido
-        ? 'Existe boleto vencido há mais de 6 dias. Exibimos apenas o boleto vencido para regularização com o financeiro.'
-        : boletos.length
-          ? 'Boletos encontrados.'
-          : 'Associado localizado, mas nenhum boleto disponível foi encontrado para este CPF/CNPJ.',
+      message: boletos.length
+        ? 'Consulta realizada com sucesso.'
+        : 'Associado localizado, mas nenhum boleto disponível foi encontrado para este CPF/CNPJ.',
       associado: {
         id: associadoFinal.id,
         nome: associadoFinal.nome,
@@ -635,6 +1343,14 @@ export default async function handler(req, res) {
         totalBoletosAntesDaRegra,
         totalBoletosExibidos: boletos.length,
         limiteDiasVencido: getBoletoMaxDaysAfterDue(),
+        gruposBloqueados: regraExibicao.gruposBloqueados || [],
+        placasBloqueadas: regraExibicao.placasBloqueadas || [],
+        placasCanceladas: regraExibicao.placasCanceladas || [],
+        placasInativas: regraExibicao.placasInativas || [],
+        possuiPlacaCancelada: regraExibicao.possuiPlacaCancelada || false,
+        possuiPlacaInativa: regraExibicao.possuiPlacaInativa || false,
+        totalGrupos: regraExibicao.totalGrupos || 0,
+        gruposAnalisados: regraExibicao.gruposAnalisados || [],
       },
       ...(isTrue(process.env.HINOVA_DEBUG_RESPONSE) ? {
         debug: {
@@ -644,6 +1360,8 @@ export default async function handler(req, res) {
           associadoDadosTentativas: dadosResult.attempts,
           associadoDadosRetornoTamanho: dadosResult.raw?.length || 0,
           associadoDadosRetornoPreview: dadosResult.raw?.slice(0, 2400) || '',
+          placasCanceladasDetectadas: dadosResult.placasCanceladasDetectadas || [],
+          veiculosLookupTentativas: veiculosResult.attempts || [],
           listaAjaxBoletosEncontrados: listaResult.boletos.length,
           listaAjaxPayload: listaResult.payload,
           listaAjaxRetornoTamanho: listaResult.raw.length,

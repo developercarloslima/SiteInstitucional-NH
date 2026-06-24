@@ -313,9 +313,22 @@ function formatDate(value) {
 }
 
 function getBoletoTitle(boleto, index) {
+  if (boleto.tipoExibicao === 'placa_cancelada') {
+    return boleto.placa ? `Placa ${boleto.placa}` : (boleto.veiculo || `Placa ${index + 1}`);
+  }
+
   const placa = boleto.placa ? `Placa ${boleto.placa}` : `Boleto ${index + 1}`;
-  const veiculo = boleto.veiculo ? ` — ${boleto.veiculo}` : '';
+  const veiculo = boleto.veiculo && !String(boleto.veiculo).includes(placa)
+    ? ` — ${boleto.veiculo}`
+    : '';
   return `${placa}${veiculo}`;
+}
+
+function getBoletoLabel(boleto) {
+  if (boleto.tipoExibicao === 'placa_cancelada') return 'Placa cancelada';
+  if (boleto.tipoExibicao === 'placa_inativa') return 'Placa inativa';
+  if (boleto.tipoExibicao === 'boleto_vencido') return 'Boleto vencido';
+  return boleto.disponivel === false ? 'Necessário atualizar' : 'Boleto disponível';
 }
 
 async function copyToClipboard(text) {
@@ -345,7 +358,7 @@ function createBoletoItem(boleto, index) {
   info.className = 'boleto-item__info';
 
   const label = document.createElement('small');
-  label.textContent = boleto.disponivel === false ? 'Necessário atualizar' : 'Boleto disponível';
+  label.textContent = getBoletoLabel(boleto);
 
   const title = document.createElement('strong');
   title.textContent = getBoletoTitle(boleto, index);
@@ -407,7 +420,7 @@ function createBoletoItem(boleto, index) {
     callLink.className = 'primary-button boleto-call-button';
     callLink.href = 'tel:08005900656';
     callLink.setAttribute('aria-label', 'Ligar para o financeiro da Novo Horizonte no 0800 590 0656');
-    callLink.innerHTML = '<i class="fa-solid fa-phone" aria-hidden="true"></i> Ligar 0800 590 0656';
+    callLink.innerHTML = '<i class="fa-solid fa-phone" aria-hidden="true"></i> Ligar 0800 590 0656 - opção 2';
     actions.appendChild(callLink);
   }
 
@@ -496,25 +509,16 @@ if (boletoBuscaForm) {
         boletoAssociadoNome.textContent = data.associado?.nome || 'Associado localizado';
       }
 
-      const temBoletoBloqueado = boletoState.boletos.some((boleto) => boleto.disponivel === false);
-
       if (boletoResumo) {
-        boletoResumo.textContent = temBoletoBloqueado
-          ? 'Existe boleto vencido há mais de 6 dias. Para liberar a emissão, regularize com o financeiro pelo 0800 590 0656.'
-          : boletoState.boletos.length
-            ? `${boletoState.boletos.length} boleto(s) encontrado(s). Confira placa, valor e vencimento antes de baixar.`
-            : 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
+        boletoResumo.textContent = boletoState.boletos.length
+          ? `${boletoState.boletos.length} resultado(s) encontrado(s). Confira placa, valor e vencimento antes de baixar.`
+          : 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
       }
 
       renderBoletos(boletoState.boletos);
       setElementHidden(boletoAssociadoArea, false);
       setElementHidden(boletoBoletosArea, false);
-      setBoletoMessage(
-        temBoletoBloqueado
-          ? 'Boleto vencido encontrado. Entre em contato com o financeiro para atualizar.'
-          : 'Consulta realizada com sucesso.',
-        temBoletoBloqueado ? 'warning' : 'success'
-      );
+      setBoletoMessage('Consulta realizada com sucesso.', 'success');
     } catch (error) {
       setBoletoMessage(
         error.message || 'Não foi possível buscar os boletos agora. Tente novamente em instantes.',
