@@ -381,7 +381,8 @@ function createBoletoItem(boleto, index) {
     openLink.href = boleto.pdf;
     openLink.target = '_blank';
     openLink.rel = 'noopener';
-    openLink.textContent = 'Abrir boleto';
+    openLink.setAttribute('download', '');
+    openLink.textContent = 'Baixar boleto';
     actions.appendChild(openLink);
   }
 
