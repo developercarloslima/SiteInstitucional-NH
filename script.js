@@ -402,6 +402,15 @@ function createBoletoItem(boleto, index) {
     actions.appendChild(copyButton);
   }
 
+  if (boleto.disponivel === false) {
+    const callLink = document.createElement('a');
+    callLink.className = 'primary-button boleto-call-button';
+    callLink.href = 'tel:08005900656';
+    callLink.setAttribute('aria-label', 'Ligar para o financeiro da Novo Horizonte no 0800 590 0656');
+    callLink.innerHTML = '<i class="fa-solid fa-phone" aria-hidden="true"></i> Ligar 0800 590 0656';
+    actions.appendChild(callLink);
+  }
+
   if (!actions.children.length && boleto.disponivel !== false) {
     const empty = document.createElement('span');
     empty.className = 'boleto-empty-state';

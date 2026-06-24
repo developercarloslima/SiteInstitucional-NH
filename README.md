@@ -46,6 +46,9 @@ BOLETO_MAX_BUSINESS_DAYS_AFTER_DUE=5
 
 > Observação: as rotas internas do SGA normalmente dependem do cookie da sessão logada. O ideal para produção é a Hinova fornecer uma API oficial por token para consulta de boletos.
 
+
+- Boletos bloqueados por prazo exibem botão de ligação direta para o financeiro: 0800 590 0656.
+
 ## Estrutura
 
 ```txt

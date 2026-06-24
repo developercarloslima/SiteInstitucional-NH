@@ -3904,6 +3904,21 @@ body.cotacao-modal-open {
   white-space: nowrap;
 }
 
+
+.boleto-call-button {
+  width: fit-content;
+  padding-inline: 18px;
+  background: linear-gradient(180deg, #ffff33, var(--yellow));
+}
+
+.boleto-call-button i {
+  font-size: 1rem;
+}
+
+.boleto-item--blocked .boleto-item__actions {
+  align-self: end;
+}
+
 .boleto-empty-state {
   padding: 16px;
   border: 1px dashed var(--border);
