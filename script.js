@@ -496,16 +496,25 @@ if (boletoBuscaForm) {
         boletoAssociadoNome.textContent = data.associado?.nome || 'Associado localizado';
       }
 
+      const temBoletoBloqueado = boletoState.boletos.some((boleto) => boleto.disponivel === false);
+
       if (boletoResumo) {
-        boletoResumo.textContent = boletoState.boletos.length
-          ? `${boletoState.boletos.length} boleto(s) encontrado(s). Confira placa, valor e vencimento antes de abrir/imprimir.`
-          : 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
+        boletoResumo.textContent = temBoletoBloqueado
+          ? 'Existe boleto vencido há mais de 6 dias. Para liberar a emissão, regularize com o financeiro pelo 0800 590 0656.'
+          : boletoState.boletos.length
+            ? `${boletoState.boletos.length} boleto(s) encontrado(s). Confira placa, valor e vencimento antes de baixar.`
+            : 'Nenhum boleto disponível foi encontrado para este CPF/CNPJ.';
       }
 
       renderBoletos(boletoState.boletos);
       setElementHidden(boletoAssociadoArea, false);
       setElementHidden(boletoBoletosArea, false);
-      setBoletoMessage('Consulta realizada com sucesso.', 'success');
+      setBoletoMessage(
+        temBoletoBloqueado
+          ? 'Boleto vencido encontrado. Entre em contato com o financeiro para atualizar.'
+          : 'Consulta realizada com sucesso.',
+        temBoletoBloqueado ? 'warning' : 'success'
+      );
     } catch (error) {
       setBoletoMessage(
         error.message || 'Não foi possível buscar os boletos agora. Tente novamente em instantes.',

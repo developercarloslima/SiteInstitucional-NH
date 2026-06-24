@@ -41,13 +41,24 @@ HINOVA_BOLETO_MENSAGEM=Y
 HINOVA_BOLETO_DESCONTO=N
 
 HINOVA_DEBUG_RESPONSE=true
-BOLETO_MAX_BUSINESS_DAYS_AFTER_DUE=5
+BOLETO_MAX_DAYS_AFTER_DUE=6
 ```
 
 > Observação: as rotas internas do SGA normalmente dependem do cookie da sessão logada. O ideal para produção é a Hinova fornecer uma API oficial por token para consulta de boletos.
 
 
 - Boletos bloqueados por prazo exibem botão de ligação direta para o financeiro: 0800 590 0656.
+
+
+## Regra de boleto vencido
+
+Quando a consulta encontrar boleto vencido há mais de **6 dias corridos**, o site passa a exibir **somente o boleto vencido mais antigo**. Os demais boletos ficam ocultos até a regularização. O card mostra a mensagem de atualização e o botão **Ligar 0800 590 0656**.
+
+Configure o limite em:
+
+```env
+BOLETO_MAX_DAYS_AFTER_DUE=6
+```
 
 ## Estrutura
 

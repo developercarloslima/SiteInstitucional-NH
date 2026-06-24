@@ -2,7 +2,7 @@ const DEFAULT_ASSOCIADO_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte
 const DEFAULT_ASSOCIADO_DADOS_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaAssociadoDados.php';
 const DEFAULT_BOLETOS_URL = 'https://sga.hinova.com.br/sga/sgav4_novohorizonte/carrega/carregaListaBoletoAJAX.php';
 const DEFAULT_ERROR_MESSAGE = 'Não foi possível concluir a consulta no SGA/Hinova.';
-const UPDATE_MESSAGE = 'Este boleto não está disponível para emissão pelo site, pois passou do prazo permitido para retirada da segunda via. Entre em contato com o setor financeiro da Novo Horizonte para atualizar seu boleto.';
+const UPDATE_MESSAGE = 'Este boleto está vencido há mais de 6 dias e não está disponível para emissão pelo site. Entre em contato com o setor financeiro da Novo Horizonte para atualizar seu boleto.';
 
 function getCleanInput(value) {
   return String(value || '').trim();
@@ -170,26 +170,30 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function businessDaysAfterDueDate(dueDate, currentDate = new Date()) {
+function daysAfterDueDate(dueDate, currentDate = new Date()) {
   const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate(), 12);
   const today = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 12);
   if (today <= due) return 0;
 
-  let count = 0;
-  const cursor = new Date(due);
-  while (cursor < today) {
-    cursor.setDate(cursor.getDate() + 1);
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) count += 1;
-  }
-  return count;
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  return Math.floor((today.getTime() - due.getTime()) / oneDayMs);
+}
+
+function getBoletoOverdueDays(dueDateValue) {
+  const dueDate = parseDate(dueDateValue);
+  if (!dueDate) return 0;
+  return daysAfterDueDate(dueDate);
+}
+
+function getBoletoMaxDaysAfterDue() {
+  const value = Number(process.env.BOLETO_MAX_DAYS_AFTER_DUE || 6);
+  return Number.isFinite(value) && value >= 0 ? value : 6;
 }
 
 function canIssueBoleto(dueDateValue) {
   const dueDate = parseDate(dueDateValue);
   if (!dueDate) return true;
-  const limit = Number(process.env.BOLETO_MAX_BUSINESS_DAYS_AFTER_DUE || 5);
-  return businessDaysAfterDueDate(dueDate) <= limit;
+  return daysAfterDueDate(dueDate) <= getBoletoMaxDaysAfterDue();
 }
 
 function normalizeSgaBoletoUrl(key, operacao, baseUrl) {
@@ -321,6 +325,7 @@ function parseBoletosFinanceiroFromAssociadoDados(responseText, baseUrl) {
     const pdf = buildBoletoDownloadUrl(sgaUrl, numero);
     const placa = extractPlacaForNumero(html, numero);
     const disponivel = canIssueBoleto(vencimento);
+    const diasAtraso = getBoletoOverdueDays(vencimento);
 
     if (!numero && !vencimento && !valor && !pdf) return null;
 
@@ -345,6 +350,7 @@ function parseBoletosFinanceiroFromAssociadoDados(responseText, baseUrl) {
       codigoBarras: '',
       linhaDigitavel: '',
       disponivel,
+      diasAtraso,
       mensagem: disponivel ? '' : UPDATE_MESSAGE,
     };
   }).filter(Boolean);
@@ -386,6 +392,7 @@ function parseBoletosListaHtml(html, baseUrl) {
     const sgaUrl = extractSecondCopyUrl(cellsHtml[7], baseUrl);
     const pdf = buildBoletoDownloadUrl(sgaUrl, numero);
     const disponivel = canIssueBoleto(vencimento);
+    const diasAtraso = getBoletoOverdueDays(vencimento);
 
     if (!numero && !valor && !vencimento && !pdf) return null;
 
@@ -403,6 +410,7 @@ function parseBoletosListaHtml(html, baseUrl) {
       codigoBarras: '',
       linhaDigitavel: '',
       disponivel,
+      diasAtraso,
       mensagem: disponivel ? '' : UPDATE_MESSAGE,
     };
   }).filter(Boolean);
@@ -456,6 +464,36 @@ function buildAssociadoDadosKeyCandidates(associado) {
   }
 
   return [...new Set(candidates.filter(Boolean))];
+}
+
+
+function sortBoletosByDueDate(boletos = []) {
+  return [...boletos].sort((a, b) => {
+    const dateA = parseDate(a.vencimento)?.getTime() || Number.MAX_SAFE_INTEGER;
+    const dateB = parseDate(b.vencimento)?.getTime() || Number.MAX_SAFE_INTEGER;
+    return dateA - dateB;
+  });
+}
+
+function applyOverdueDisplayRule(boletos = []) {
+  const blockedBoletos = sortBoletosByDueDate(
+    boletos.filter((boleto) => boleto && boleto.disponivel === false)
+  );
+
+  if (!blockedBoletos.length) {
+    return {
+      boletos,
+      bloqueadoPorBoletoVencido: false,
+      boletoVencidoSelecionado: null,
+    };
+  }
+
+  const selected = blockedBoletos[0];
+  return {
+    boletos: [selected],
+    bloqueadoPorBoletoVencido: true,
+    boletoVencidoSelecionado: selected,
+  };
 }
 
 async function consultarAssociadoDados(associado) {
@@ -575,11 +613,16 @@ export default async function handler(req, res) {
     }
 
     const associadoFinal = dadosResult.associado || associado;
+    const totalBoletosAntesDaRegra = boletos.length;
+    const regraExibicao = applyOverdueDisplayRule(boletos);
+    boletos = regraExibicao.boletos;
 
     return res.status(200).json({
-      message: boletos.length
-        ? 'Boletos encontrados.'
-        : 'Associado localizado, mas nenhum boleto disponível foi encontrado para este CPF/CNPJ.',
+      message: regraExibicao.bloqueadoPorBoletoVencido
+        ? 'Existe boleto vencido há mais de 6 dias. Exibimos apenas o boleto vencido para regularização com o financeiro.'
+        : boletos.length
+          ? 'Boletos encontrados.'
+          : 'Associado localizado, mas nenhum boleto disponível foi encontrado para este CPF/CNPJ.',
       associado: {
         id: associadoFinal.id,
         nome: associadoFinal.nome,
@@ -587,6 +630,12 @@ export default async function handler(req, res) {
         status: associadoFinal.status || '',
       },
       boletos,
+      regraExibicao: {
+        bloqueadoPorBoletoVencido: regraExibicao.bloqueadoPorBoletoVencido,
+        totalBoletosAntesDaRegra,
+        totalBoletosExibidos: boletos.length,
+        limiteDiasVencido: getBoletoMaxDaysAfterDue(),
+      },
       ...(isTrue(process.env.HINOVA_DEBUG_RESPONSE) ? {
         debug: {
           modo: boletos.length && dadosResult.boletos?.length ? 'carregaAssociadoDados' : 'fallback-listaBoletoAJAX',
@@ -600,6 +649,8 @@ export default async function handler(req, res) {
           listaAjaxRetornoTamanho: listaResult.raw.length,
           listaAjaxRetornoPreview: listaResult.raw.slice(0, 1200),
           boletosEncontrados: boletos.length,
+          totalBoletosAntesDaRegra,
+          regraExibicao,
         },
       } : {}),
     });
