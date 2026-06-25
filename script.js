@@ -210,7 +210,7 @@ if (contactForm && contactFormMessage) {
   });
 }
 
-// Consulta da 2ª via de boleto por associado: CPF/CNPJ -> todos os boletos disponíveis
+// Consulta da 2ª via de boleto por associado: CPF/CNPJ -> API oficial Hinova SGA V2
 const boletoBuscaForm = document.querySelector('#boletoBuscaForm');
 const boletoDocumento = document.querySelector('#boletoDocumento');
 const boletoFormMessage = document.querySelector('#boletoFormMessage');
@@ -277,25 +277,60 @@ function resetBoletoFlow() {
   boletoDocumento?.focus();
 }
 
-function formatCurrency(value) {
-  if (value === undefined || value === null || value === '') return '';
+function parseCurrencyNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
 
   if (typeof value === 'number') {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return Number.isFinite(value) ? value : null;
   }
+
+  const raw = String(value)
+    .trim()
+    .replace(/R\$/gi, '')
+    .replace(/BRL/gi, '')
+    .replace(/\s/g, '');
+
+  if (!raw) return null;
+
+  const hasComma = raw.includes(',');
+  const hasDot = raw.includes('.');
+  let normalized = raw.replace(/[^0-9,.-]/g, '');
+
+  if (hasComma && hasDot) {
+    // Decide pelo último separador: 1.234,56 = pt-BR | 1234.56 = en-US/API
+    if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+      normalized = normalized.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = normalized.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    normalized = normalized.replace(',', '.');
+  } else if (hasDot) {
+    const parts = normalized.split('.');
+    const last = parts.at(-1) || '';
+
+    if (parts.length > 2) {
+      // 1.234.567 sem vírgula: trata como separador de milhar.
+      normalized = normalized.replace(/\./g, '');
+    } else if (last.length === 3 && parts[0].length <= 3) {
+      // 8.009 provavelmente veio como milhar, não decimal.
+      normalized = normalized.replace(/\./g, '');
+    }
+    // 80.09 ou 8009.00 continuam como decimal da API.
+  }
+
+  const number = Number(normalized);
+  return Number.isNaN(number) ? null : number;
+}
+
+function formatCurrency(value) {
+  if (value === undefined || value === null || value === '') return '';
 
   const raw = String(value).trim();
   if (!raw) return '';
 
-  if (/^R\$/.test(raw)) return raw;
-
-  const normalized = raw
-    .replace(/\s/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.');
-
-  const number = Number(normalized);
-  if (Number.isNaN(number)) return raw;
+  const number = parseCurrencyNumber(value);
+  if (number === null) return raw;
 
   return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -368,7 +403,7 @@ function createBoletoItem(boleto, index) {
   if (boleto.valor) parts.push(`Valor: ${formatCurrency(boleto.valor)}`);
   if (boleto.vencimento) parts.push(`Vencimento: ${formatDate(boleto.vencimento)}`);
   if (boleto.status) parts.push(`Status: ${boleto.status}`);
-  details.textContent = parts.length ? parts.join(' | ') : 'Informações do boleto disponíveis para consulta.';
+  details.textContent = parts.length ? parts.join(' | ') : 'Informações disponíveis para consulta.';
 
   info.append(label, title, details);
 
@@ -394,7 +429,6 @@ function createBoletoItem(boleto, index) {
     openLink.href = boleto.pdf;
     openLink.target = '_blank';
     openLink.rel = 'noopener';
-    openLink.setAttribute('download', '');
     openLink.textContent = 'Baixar boleto';
     actions.appendChild(openLink);
   }
