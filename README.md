@@ -1,7 +1,7 @@
 # Novo Horizonte Proteção Veicular
 
 <p align="center">
-  <img src="./assets/logo-nh-oficial.png" alt="Logo Novo Horizonte Proteção Veicular" width="220" />
+  <img src="./assets/simbolo-fundo-azul.png" alt="Logo Novo Horizonte Proteção Veicular" width="220" />
 </p>
 
 <p align="center">
