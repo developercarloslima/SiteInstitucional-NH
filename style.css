@@ -3,17 +3,18 @@
   --navy-900: #070c40;
   --navy-800: #070c40;
   --navy-700: #070c40;
-  --yellow: #f0f000;
-  --yellow-dark: #dada00;
+  --yellow: #f5cc44f8;
+  --yellow-dark: #FDC206;
   --white: #ffffff;
   --off-white: #f7f8fb;
   --text: #070c40;
   --muted: #586174;
   --border: #e3e8f2;
   --shadow: 0 24px 60px rgba(7, 12, 64, 0.12);
-  --font-body: "Helvetica Now Display", "Inter", Arial, sans-serif;
-  --font-display: "League Spartan", "Helvetica Now Display", Arial, sans-serif;
+  --font-body: "Poppins", sans-serif;
+  --font-display: "Poppins", sans-serif;
 }
+
 
 * {
   box-sizing: border-box;
@@ -29,6 +30,7 @@ html {
 body {
   min-height: 100vh;
   font-family: var(--font-body);
+  font-optical-sizing: auto;
   color: var(--text);
   background: var(--off-white);
   overflow-x: hidden;
@@ -338,12 +340,12 @@ button {
 
 .benefits-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 9px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 
 .benefit-card {
-  min-height: 252px;
+  min-height: 236px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4728,11 +4730,7 @@ body.cotacao-modal-open {
 }
 
 
-/* Ajuste solicitado: celular realista na seção do aplicativo */
-.app-section {
-  overflow: visible !important;
-}
-
+/* Ajuste visual do celular realista na seção do aplicativo */
 .app-card {
   grid-template-columns: 190px minmax(0, 1fr) 270px !important;
   min-height: 190px !important;
@@ -4848,5 +4846,63 @@ body.cotacao-modal-open {
 
   .app-card .store-buttons.store-badges {
     max-width: 112px !important;
+  }
+}
+
+
+/* Ajuste final: tamanho ideal dos ícones dos benefícios */
+.benefits-section .benefit-card .icon-circle {
+  width: 92px;
+  height: 92px;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+
+.benefits-section .benefit-card .icon-circle img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  transform: scale(1.38);
+  transform-origin: center;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.12));
+}
+
+/* Mantém os ícones dos passos sem alterar */
+.steps-section .icon-circle {
+  width: 86px;
+  height: 86px;
+}
+
+.steps-section .icon-circle img {
+  width: 66px;
+  height: 66px;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .benefits-section .benefit-card .icon-circle {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 9px;
+  }
+
+  .benefits-section .benefit-card .icon-circle img {
+    width: 66px;
+    height: 66px;
+    transform: scale(1.28);
+  }
+}
+
+@media (max-width: 430px) {
+  .benefits-section .benefit-card .icon-circle {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+  }
+
+  .benefits-section .benefit-card .icon-circle img {
+    width: 58px;
+    height: 58px;
+    transform: scale(1.22);
   }
 }
