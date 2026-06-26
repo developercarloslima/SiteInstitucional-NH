@@ -5011,7 +5011,84 @@ body.cotacao-modal-open {
 }
 
 
-/* Ajuste final: centralização da logo no bloco de afiliado */
+/* =========================================================
+   CORREÇÃO FINAL RESPONSIVA — NH PROTEÇÃO VEICULAR
+   Corrige estouro lateral, hero cortado, header e cards.
+   ========================================================= */
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+}
+
+.site-header,
+main,
+section,
+footer {
+  width: 100%;
+  max-width: 100%;
+}
+
+.container {
+  width: min(1180px, calc(100% - 32px));
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.site-header {
+  left: 0;
+  right: 0;
+}
+
+.nav-wrapper {
+  width: min(1180px, calc(100% - 32px));
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.header-phone {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid rgba(245, 204, 68, 0.34);
+  border-radius: 999px;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+  text-transform: none;
+}
+
+.header-phone:hover {
+  color: var(--navy-950);
+  background: var(--yellow);
+}
+
+.hero-section {
+  overflow: hidden;
+}
+
+.hero-content {
+  width: min(1180px, calc(100% - 32px));
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.hero-copy h1 {
+  max-width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 .proof-affiliate-logo {
   flex: 0 0 auto;
   display: flex;
@@ -5025,59 +5102,1613 @@ body.cotacao-modal-open {
   display: block;
 }
 
-@media (max-width: 760px) {
-  .proof-strip.proof-strip-single {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+/* DESKTOP GRANDE */
+@media (min-width: 1221px) {
+  .container,
+  .nav-wrapper,
+  .hero-content {
+    width: min(1240px, calc(100% - 64px));
+    max-width: 1240px;
+  }
+
+  .nav-wrapper {
+    min-height: 82px;
+    gap: 16px;
+  }
+
+  .brand-symbol {
+    width: 58px;
+  }
+
+  .brand-name strong {
+    font-size: 1.18rem;
+    white-space: nowrap;
+  }
+
+  .brand-name small {
+    font-size: 0.62rem;
+    white-space: nowrap;
+  }
+
+  .main-menu {
+    flex: 1 1 auto;
+    gap: 16px;
+    font-size: 0.68rem;
+  }
+
+  .main-menu a {
+    white-space: nowrap;
+  }
+
+  .header-cta {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 9px;
+    font-size: 0.72rem;
+  }
+
+  .hero-section {
+    min-height: 650px;
+    padding-top: 82px;
+  }
+
+  .hero-bg {
+    inset: 82px 0 0 0;
+    width: 100%;
+    background-position: center right;
+    background-size: cover;
+  }
+
+  .hero-copy {
+    width: min(560px, 44vw);
+    padding-block: 64px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(3.4rem, 5.1vw, 5rem);
+    line-height: 0.93;
+    letter-spacing: -0.065em;
+  }
+
+  .hero-copy p {
+    width: min(420px, 100%);
+    margin: 24px 0 30px;
+    font-size: 1.05rem;
+    line-height: 1.42;
+  }
+
+  .benefits-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 14px;
   }
 
-  .proof-strip.proof-strip-single .proof-call-content {
+  .benefit-card {
+    min-height: 210px;
+    padding: 28px 14px 22px;
+  }
+
+  .proof-strip.proof-strip-single {
+    width: min(100%, 980px);
+    margin-inline: auto;
+    padding: 30px 58px;
+  }
+
+  .proof-call-content {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .proof-call-text strong {
+    font-size: clamp(1.75rem, 3vw, 2.45rem);
+    line-height: 0.9;
+  }
+
+  .app-card {
+    grid-template-columns: 200px 1fr 270px;
+    padding-inline: 56px;
+  }
+}
+
+/* NOTEBOOK / DESKTOP MÉDIO */
+@media (min-width: 1061px) and (max-width: 1220px) {
+  .container,
+  .nav-wrapper,
+  .hero-content {
+    width: min(100% - 36px, 1120px);
+    max-width: 1120px;
+  }
+
+  .nav-wrapper {
+    min-height: 78px;
+    gap: 10px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-symbol {
+    width: 50px;
+  }
+
+  .brand-name strong {
+    font-size: 0.98rem;
+    white-space: nowrap;
+  }
+
+  .brand-name small {
+    font-size: 0.52rem;
+    white-space: nowrap;
+  }
+
+  .header-phone {
+    min-height: 36px;
+    padding: 0 9px;
+    font-size: 0.58rem;
+  }
+
+  .main-menu {
+    flex: 1 1 auto;
+    gap: 10px;
+    font-size: 0.6rem;
+  }
+
+  .main-menu a {
+    white-space: nowrap;
+  }
+
+  .header-cta {
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 0.6rem;
+  }
+
+  .header-cta .wa-icon {
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 1.1rem;
+  }
+
+  .hero-section {
+    min-height: 610px;
+    padding-top: 78px;
+  }
+
+  .hero-bg {
+    inset: 78px 0 0 0;
+    width: 100%;
+    background-position: center right;
+    background-size: cover;
+  }
+
+  .hero-copy {
+    width: min(470px, 42vw);
+    padding-block: 56px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(3rem, 4.8vw, 4.25rem);
+    line-height: 0.92;
+    letter-spacing: -0.06em;
+  }
+
+  .hero-copy p {
+    width: min(360px, 100%);
+    margin: 22px 0 28px;
+    font-size: 0.95rem;
+    line-height: 1.42;
+  }
+
+  .benefits-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .benefit-card {
+    min-height: 195px;
+    padding: 24px 10px 20px;
+  }
+
+  .benefit-card h3 {
+    font-size: 0.82rem;
+  }
+
+  .proof-strip.proof-strip-single {
+    width: min(100%, 920px);
+    margin-inline: auto;
+    padding: 26px 42px;
+  }
+
+  .proof-call-content {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .proof-affiliate-logo img {
+    width: 74px;
+  }
+
+  .proof-call-text strong {
+    font-size: 1.8rem;
+  }
+
+  .proof-call-text span {
+    max-width: 540px;
+    font-size: 0.82rem;
+  }
+
+  .app-card {
+    grid-template-columns: 160px 1fr 230px;
+    gap: 22px;
+    padding-inline: 34px;
+  }
+}
+
+/* DESKTOP APERTADO: prioriza menu */
+@media (min-width: 1061px) and (max-width: 1120px) {
+  .header-phone {
+    display: none;
+  }
+
+  .main-menu {
+    gap: 12px;
+    font-size: 0.64rem;
+  }
+}
+
+/* TABLET */
+@media (min-width: 761px) and (max-width: 1060px) {
+  .container,
+  .nav-wrapper,
+  .hero-content {
+    width: min(100% - 36px, 940px);
+    max-width: 940px;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
+
+  .nav-wrapper {
+    min-height: 82px;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .brand {
+    margin-right: auto;
+  }
+
+  .brand-symbol {
+    width: 56px;
+  }
+
+  .brand-name strong {
+    font-size: 1.16rem;
+  }
+
+  .brand-name small {
+    font-size: 0.62rem;
+  }
+
+  .header-phone {
+    margin-left: auto;
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 0.72rem;
+  }
+
+  .menu-toggle {
+    display: grid;
+    place-items: center;
+    order: 3;
+    flex: 0 0 48px;
+  }
+
+  .main-menu,
+  .header-cta {
+    display: none;
+  }
+
+  .main-menu.open {
+    inset: 82px 18px auto 18px;
+    display: grid;
+  }
+
+  .hero-section {
+    min-height: 540px;
+    padding-top: 0;
+  }
+
+  .hero-bg {
+    inset: 0;
+    width: 100%;
+    background-position: 60% center;
+    background-size: cover;
+  }
+
+  .hero-copy {
+    width: min(430px, 50vw);
+    padding-block: 52px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.8rem, 6.3vw, 4rem);
+    line-height: 0.94;
+  }
+
+  .hero-copy p {
+    width: min(340px, 100%);
+    font-size: 0.95rem;
+    line-height: 1.42;
+  }
+
+  .benefits-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .proof-strip.proof-strip-single {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 26px 34px;
+  }
+
+  .proof-call-content {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .proof-affiliate-logo img {
+    width: 76px;
+  }
+
+  .proof-call-text strong {
+    font-size: 1.75rem;
+  }
+
+  .app-card {
+    grid-template-columns: 130px 1fr 210px;
+    gap: 22px;
+    padding: 14px 28px;
+  }
+}
+
+/* MOBILE */
+@media (max-width: 760px) {
+  .container,
+  .nav-wrapper,
+  .hero-content {
+    width: min(100% - 24px, 480px);
+    max-width: 480px;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
+
+  .nav-wrapper {
+    min-height: 72px;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 0;
+    gap: 8px;
+  }
+
+  .brand-symbol {
+    width: 46px;
+  }
+
+  .brand-name {
+    min-width: 0;
+  }
+
+  .brand-name strong {
+    font-size: 0.98rem;
+    line-height: 0.9;
+    white-space: nowrap;
+  }
+
+  .brand-name small {
+    font-size: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .header-phone {
+    order: 2;
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 0.55rem;
+  }
+
+  .menu-toggle {
+    order: 3;
+    display: grid;
+    place-items: center;
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .menu-toggle span {
+    width: 26px;
+    height: 3px;
+    margin: 3px auto;
+    background: var(--white);
+  }
+
+  .main-menu,
+  .header-cta {
+    display: none !important;
+  }
+
+  .main-menu.open {
+    position: fixed;
+    inset: 72px 12px auto 12px;
+    display: grid !important;
+    gap: 6px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .hero-section {
+    min-height: 304px;
+    padding-top: 0;
+    align-items: center;
+  }
+
+  .hero-bg {
+    inset: 0;
+    width: 100%;
+    background-position: 62% center;
+    background-size: cover;
+  }
+
+  .hero-bg::after {
+    background:
+      linear-gradient(90deg, rgba(7, 12, 64, 0.98) 0%, rgba(7, 12, 64, 0.86) 44%, rgba(7, 12, 64, 0.34) 100%),
+      linear-gradient(180deg, rgba(7, 12, 64, 0.04), rgba(7, 12, 64, 0.5));
+  }
+
+  .hero-copy {
+    width: min(225px, 62vw);
+    padding: 20px 0 22px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.55rem, 7.4vw, 2.35rem);
+    line-height: 0.94;
+    letter-spacing: -0.045em;
+  }
+
+  .hero-copy p {
+    width: min(210px, 100%);
+    margin: 12px 0 14px;
+    font-size: 0.72rem;
+    line-height: 1.42;
+  }
+
+  .hero-copy .primary-button {
+    width: auto;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 0.64rem;
+  }
+
+  .section-padding {
+    padding-top: 30px;
+  }
+
+  .section-heading {
+    margin-bottom: 20px;
+  }
+
+  .section-heading span {
+    font-size: 0.66rem;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(1.38rem, 5.6vw, 1.8rem);
+    line-height: 1.02;
+  }
+
+  .benefits-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .benefit-card {
+    min-height: 136px;
+    padding: 10px 5px 12px;
+    border-radius: 9px;
+  }
+
+  .icon-circle {
+    width: 62px;
+    height: 62px;
+    margin-bottom: 8px;
+  }
+
+  .icon-circle img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .benefit-card h3 {
+    margin-bottom: 0;
+    font-size: 0.58rem;
+    line-height: 1.15;
+  }
+
+  .benefit-card p {
+    display: none;
+  }
+
+  .proof-strip.proof-strip-single {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 22px 16px;
     text-align: center;
+  }
+
+  .proof-call-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
   }
 
   .proof-affiliate-logo {
     width: 100%;
-    margin: 0 auto 2px;
     justify-content: center;
   }
 
   .proof-affiliate-logo img {
-    width: 86px;
+    width: 78px;
     margin-inline: auto;
   }
 
-  .proof-strip.proof-strip-single .proof-call-text {
+  .proof-call-text {
     width: 100%;
+    display: grid;
     justify-items: center;
     text-align: center;
   }
 
-  .proof-strip.proof-strip-single .proof-call-text strong,
-  .proof-strip.proof-strip-single .proof-call-text span {
+  .proof-call-text strong {
+    max-width: 310px;
+    font-size: clamp(1.65rem, 7.4vw, 2.15rem);
+    line-height: 0.92;
     text-align: center;
   }
 
-  .proof-strip.proof-strip-single .proof-call-button {
+  .proof-call-text span {
+    max-width: 310px;
+    font-size: 0.66rem;
+    line-height: 1.28;
+    text-align: center;
+  }
+
+  .proof-call-button {
+    width: min(260px, 100%);
+    min-height: 44px;
     margin-inline: auto;
+  }
+
+  .steps-section {
+    padding-top: 30px;
+  }
+
+  .steps-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .steps-grid::before {
+    display: block;
+    left: 17%;
+    right: 17%;
+    top: 31px;
+  }
+
+  .step-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .step-card .icon-circle {
+    width: 62px;
+    height: 62px;
+  }
+
+  .step-number {
+    width: 23px;
+    height: 23px;
+    margin-top: -10px;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+  }
+
+  .step-card h3 {
+    max-width: 118px;
+    font-size: 0.58rem;
+  }
+
+  .step-card p {
+    max-width: 118px;
+    font-size: 0.5rem;
+  }
+
+  .app-card {
+    min-height: auto;
+    grid-template-columns: 84px 1fr;
+    gap: 11px;
+    padding: 12px;
+    text-align: left;
+  }
+
+  .phone-mockup {
+    display: block;
+    height: 104px;
+    grid-row: 1 / span 2;
+  }
+
+  .phone-mockup-real::before,
+  .phone-mockup::before,
+  .phone-screen {
+    display: none;
+  }
+
+  .app-phone-image {
+    width: 84px;
+    max-height: 120px;
+    object-fit: contain;
+  }
+
+  .app-copy h2 {
+    font-size: 0.98rem;
+    line-height: 1.04;
+  }
+
+  .app-copy p {
+    font-size: 0.62rem;
+    line-height: 1.2;
+  }
+
+  .store-buttons {
+    grid-column: 2;
+    width: min(160px, 100%);
+    gap: 6px;
+    margin: 0;
+  }
+
+  .store-buttons a,
+  .store-badge-link {
+    min-height: auto;
+    padding: 0;
+    background: transparent;
+  }
+
+  .store-buttons a::before {
+    display: none;
+  }
+
+  .store-badges img {
+    width: 100%;
+    height: auto;
+  }
+
+  .contact-section {
+    padding: 36px 0 50px;
+  }
+
+  .contact-panel {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 28px 18px;
+    text-align: center;
+  }
+
+  .contact-copy h2 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 0.92;
+  }
+
+  .contact-copy p {
+    font-size: 0.86rem;
+  }
+
+  .contact-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .contact-button {
+    width: 100%;
+  }
+
+  .floating-social {
+    right: 10px;
+    
+  }
+}
+
+/* MOBILE PEQUENO */
+@media (max-width: 430px) {
+  .container,
+  .nav-wrapper,
+  .hero-content {
+    width: min(100% - 18px, 430px);
+  }
+
+  .nav-wrapper {
+    min-height: 70px;
+    gap: 6px;
+  }
+
+  .brand-symbol {
+    width: 43px;
+  }
+
+  .brand-name strong {
+    font-size: 0.88rem;
+  }
+
+  .brand-name small {
+    font-size: 0.45rem;
+  }
+
+  .header-phone {
+    min-height: 32px;
+    padding: 0 7px;
+    font-size: 0.49rem;
+  }
+
+  .menu-toggle {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    flex-basis: 36px;
+  }
+
+  .menu-toggle span {
+    width: 23px;
+  }
+
+  .hero-section {
+    min-height: 300px;
+  }
+
+  .hero-copy {
+    width: min(208px, 62vw);
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.48rem, 7.2vw, 2.02rem);
+  }
+
+  .hero-copy p {
+    width: min(190px, 100%);
+    font-size: 0.66rem;
+  }
+
+  .hero-copy .primary-button {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.58rem;
+  }
+
+  .benefits-grid {
+    gap: 6px;
+  }
+
+  .benefit-card {
+    min-height: 128px;
+    padding: 8px 4px 10px;
+  }
+
+  .icon-circle {
+    width: 58px;
+    height: 58px;
+  }
+
+  .icon-circle img {
+    width: 49px;
+    height: 49px;
+  }
+
+  .benefit-card h3 {
+    font-size: 0.52rem;
+  }
+
+  .proof-affiliate-logo img {
+    width: 74px;
+  }
+
+  .proof-call-text strong {
+    max-width: 285px;
+    font-size: 1.72rem;
+  }
+
+  .proof-call-text span {
+    max-width: 285px;
+    font-size: 0.6rem;
+  }
+
+  .step-card .icon-circle {
+    width: 58px;
+    height: 58px;
+  }
+
+  .steps-grid::before {
+    top: 29px;
+  }
+
+  .step-card h3 {
+    font-size: 0.52rem;
+  }
+
+  .step-card p {
+    font-size: 0.46rem;
+  }
+
+  .app-card {
+    grid-template-columns: 70px 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .app-phone-image {
+    width: 70px;
+  }
+
+  .app-copy h2 {
+    font-size: 0.86rem;
+  }
+
+  .app-copy p {
+    font-size: 0.56rem;
+  }
+
+  .store-buttons {
+    width: min(132px, 100%);
+  }
+}
+
+/* MICRO TELAS */
+@media (max-width: 370px) {
+  .brand-name {
+    display: none;
+  }
+
+  .brand {
+    flex: 0 0 auto;
+  }
+
+  .header-phone {
+    margin-left: auto;
+  }
+
+  .hero-copy {
+    width: 200px;
+  }
+
+  .hero-copy h1 {
+    font-size: 1.48rem;
+  }
+
+  .hero-copy p {
+    font-size: 0.6rem;
+  }
+}
+
+
+/* =========================================================
+   AJUSTE FINAL DO HEADER MOBILE — TODOS OS DEVICES
+   Corrige sobreposição entre logo, assistência, WhatsApp e menu.
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .site-header {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+    background: var(--navy-950) !important;
+    overflow: visible !important;
+  }
+
+  .nav-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 70px !important;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  .brand {
+    order: 1 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  .brand-symbol {
+    width: 43px !important;
+    min-width: 43px !important;
+    height: auto !important;
+  }
+
+  .brand-name {
+    min-width: 0 !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+  }
+
+  .brand-name strong {
+    display: block !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    color: var(--white) !important;
+    font-size: 0.84rem !important;
+    line-height: 0.92 !important;
+    letter-spacing: -0.035em !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+  }
+
+  .brand-name small {
+    display: block !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    font-size: 0.42rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+  }
+
+  .header-phone {
+    order: 2 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 84px !important;
+    max-width: 96px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 7px !important;
+    margin: 0 !important;
+    border: 1px solid rgba(245, 204, 68, 0.48) !important;
+    border-radius: 999px !important;
+    color: var(--white) !important;
+    background: rgba(255, 255, 255, 0.035) !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+  }
+
+  .header-phone span {
+    display: none !important;
+  }
+
+  .header-phone::after {
+    content: "Assistência 24H";
+    display: block;
+    font-size: 0.48rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .header-cta {
+    order: 3 !important;
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 9px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    box-shadow: 0 10px 22px rgba(240, 240, 0, 0.2) !important;
+  }
+
+  .header-cta .wa-icon {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    font-size: 1.45rem !important;
+    line-height: 1 !important;
+  }
+
+  .menu-toggle {
+    order: 4 !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    display: grid !important;
+    align-content: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .menu-toggle span {
+    width: 27px !important;
+    height: 3px !important;
+    margin: 3px auto !important;
+    border-radius: 999px !important;
+    background: var(--white) !important;
+  }
+
+  .main-menu {
+    display: none !important;
+  }
+
+  .main-menu.open {
+    position: fixed !important;
+    inset: 70px 10px auto 10px !important;
+    width: auto !important;
+    max-width: calc(100vw - 20px) !important;
+    display: grid !important;
+    gap: 6px !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+    background: rgba(7, 12, 64, 0.98) !important;
+    box-shadow: 0 24px 60px rgba(7, 12, 64, 0.22) !important;
+  }
+
+  .hero-section {
+    min-height: 312px !important;
+    padding-top: 0 !important;
+    align-items: center !important;
+  }
+
+  .hero-bg {
+    inset: 0 !important;
+    width: 100% !important;
+    background-position: 63% center !important;
+    background-size: cover !important;
+  }
+
+  .hero-copy {
+    width: min(230px, 62vw) !important;
+    padding: 20px 0 22px !important;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.72rem, 7.3vw, 2.35rem) !important;
+    line-height: 0.93 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .hero-copy p {
+    width: min(215px, 100%) !important;
+    margin: 12px 0 15px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.36 !important;
+  }
+
+  .hero-copy .primary-button {
+    width: auto !important;
+    min-height: 38px !important;
+    max-width: none !important;
+    padding: 0 14px !important;
+    border-radius: 8px !important;
+    font-size: 0.6rem !important;
+    white-space: nowrap !important;
+  }
+
+  .floating-social {
+    position: fixed !important;
+    right: 8px !important;
+    bottom: 12px !important;
+    top: auto !important;
+    left: auto !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border-radius: 13px !important;
+    background: var(--navy-950) !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  .floating-social a {
+    width: 44px !important;
+    height: 44px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: var(--yellow) !important;
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
   }
 }
 
 @media (max-width: 430px) {
-  .proof-affiliate-logo img {
-    width: 78px;
+  .nav-wrapper {
+    min-height: 68px !important;
+    padding: 0 8px !important;
+    gap: 5px !important;
   }
 
-  .proof-strip.proof-strip-single .proof-call-content {
-    gap: 8px;
+  .brand-symbol {
+    width: 41px !important;
+    min-width: 41px !important;
+  }
+
+  .brand-name {
+    max-width: 112px !important;
+  }
+
+  .brand-name strong {
+    max-width: 112px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .brand-name small {
+    max-width: 112px !important;
+    font-size: 0.38rem !important;
+  }
+
+  .header-phone {
+    min-width: 76px !important;
+    max-width: 82px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 0 5px !important;
+  }
+
+  .header-phone::after {
+    content: "Assistência 24H";
+    font-size: 0.42rem;
+  }
+
+  .header-cta {
+    flex-basis: 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+  }
+
+  .header-cta .wa-icon {
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    font-size: 1.34rem !important;
+  }
+
+  .menu-toggle {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+  }
+
+  .menu-toggle span {
+    width: 24px !important;
+    height: 3px !important;
+  }
+
+  .main-menu.open {
+    inset: 68px 8px auto 8px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .brand-name {
+    display: none !important;
+  }
+
+  .brand {
+    flex: 1 1 auto !important;
+  }
+
+  .header-phone {
+    min-width: 54px !important;
+    max-width: 56px !important;
+  }
+
+  .header-phone::after {
+    content: "24H";
+    font-size: 0.58rem;
+  }
+
+  .hero-copy {
+    width: min(205px, 64vw) !important;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.52rem, 7vw, 1.9rem) !important;
+  }
+
+  .hero-copy p {
+    font-size: 0.62rem !important;
+  }
+}
+
+
+/* =========================================================
+   AJUSTE FINAL — HEADER MOBILE COM LOGO, NOME E ASSISTÊNCIA
+   Mantém visível: logo + Novo Horizonte + Proteção Veicular + Acionar Assistência 24H
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .site-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: var(--navy-950) !important;
+    overflow: visible !important;
+  }
+
+  .nav-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 68px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 5px !important;
+    overflow: visible !important;
+  }
+
+  .brand {
+    order: 1 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .brand-symbol {
+    width: 39px !important;
+    min-width: 39px !important;
+    height: auto !important;
+  }
+
+  .brand-name {
+    display: grid !important;
+    min-width: 0 !important;
+    max-width: 126px !important;
+    gap: 1px !important;
+    overflow: hidden !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+  }
+
+  .brand-name strong {
+    display: block !important;
+    max-width: 126px !important;
+    overflow: hidden !important;
+    color: var(--white) !important;
+    font-size: 0.76rem !important;
+    line-height: 0.9 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.035em !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+  }
+
+  .brand-name small {
+    display: block !important;
+    max-width: 126px !important;
+    overflow: hidden !important;
+    color: var(--yellow) !important;
+    font-size: 0.38rem !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+  }
+
+  .header-phone {
+    order: 2 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 104px !important;
+    max-width: 112px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 0 6px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid rgba(245, 204, 68, 0.55) !important;
+    border-radius: 999px !important;
+    color: var(--white) !important;
+    background: rgba(255, 255, 255, 0.035) !important;
+    box-shadow: none !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .header-phone span {
+    display: inline !important;
+    color: var(--white) !important;
+    font-size: 0.43rem !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    text-transform: none !important;
+  }
+
+  .header-phone::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .header-cta {
+    order: 3 !important;
+    flex: 0 0 39px !important;
+    width: 39px !important;
+    min-width: 39px !important;
+    max-width: 39px !important;
+    height: 39px !important;
+    min-height: 39px !important;
+    max-height: 39px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 9px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+
+  .header-cta .wa-icon {
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    font-size: 1.32rem !important;
+    line-height: 1 !important;
+  }
+
+  .menu-toggle {
+    order: 4 !important;
+    flex: 0 0 33px !important;
+    width: 33px !important;
+    min-width: 33px !important;
+    max-width: 33px !important;
+    height: 33px !important;
+    min-height: 33px !important;
+    max-height: 33px !important;
+    display: grid !important;
+    align-content: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .menu-toggle span {
+    width: 24px !important;
+    height: 3px !important;
+    margin: 3px auto !important;
+    border-radius: 999px !important;
+    background: var(--white) !important;
+  }
+
+  .main-menu {
+    display: none !important;
+  }
+
+  .main-menu.open {
+    position: fixed !important;
+    inset: 68px 8px auto 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px) !important;
+    display: grid !important;
+    gap: 6px !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+    background: rgba(7, 12, 64, 0.98) !important;
+    box-shadow: 0 24px 60px rgba(7, 12, 64, 0.22) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .nav-wrapper {
+    min-height: 66px !important;
+    padding: 0 7px !important;
+    gap: 4px !important;
+  }
+
+  .brand-symbol {
+    width: 37px !important;
+    min-width: 37px !important;
+  }
+
+  .brand-name {
+    max-width: 118px !important;
+  }
+
+  .brand-name strong {
+    max-width: 118px !important;
+    font-size: 0.70rem !important;
+  }
+
+  .brand-name small {
+    max-width: 118px !important;
+    font-size: 0.34rem !important;
+  }
+
+  .header-phone {
+    min-width: 96px !important;
+    max-width: 100px !important;
+    height: 29px !important;
+    min-height: 29px !important;
+    padding: 0 4px !important;
+  }
+
+  .header-phone span {
+    font-size: 0.38rem !important;
+  }
+
+  .header-cta {
+    flex-basis: 37px !important;
+    width: 37px !important;
+    min-width: 37px !important;
+    max-width: 37px !important;
+    height: 37px !important;
+    min-height: 37px !important;
+    max-height: 37px !important;
+  }
+
+  .header-cta .wa-icon {
+    width: 21px !important;
+    min-width: 21px !important;
+    height: 21px !important;
+    font-size: 1.25rem !important;
+  }
+
+  .menu-toggle {
+    flex-basis: 31px !important;
+    width: 31px !important;
+    min-width: 31px !important;
+    max-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+  }
+
+  .menu-toggle span {
+    width: 22px !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .nav-wrapper {
+    padding: 0 6px !important;
+    gap: 3px !important;
+  }
+
+  .brand-symbol {
+    width: 34px !important;
+    min-width: 34px !important;
+  }
+
+  .brand-name {
+    display: grid !important;
+    max-width: 90px !important;
+  }
+
+  .brand-name strong {
+    max-width: 90px !important;
+    font-size: 0.58rem !important;
+  }
+
+  .brand-name small {
+    max-width: 90px !important;
+    font-size: 0.29rem !important;
+  }
+
+  .header-phone {
+    min-width: 82px !important;
+    max-width: 86px !important;
+  }
+
+  .header-phone span {
+    font-size: 0.32rem !important;
+  }
+
+  .header-cta {
+    flex-basis: 35px !important;
+    width: 35px !important;
+    min-width: 35px !important;
+    max-width: 35px !important;
+    height: 35px !important;
+    min-height: 35px !important;
+    max-height: 35px !important;
+  }
+
+  .menu-toggle {
+    flex-basis: 29px !important;
+    width: 29px !important;
+    min-width: 29px !important;
+    max-width: 29px !important;
+  }
+
+  .menu-toggle span {
+    width: 20px !important;
   }
 }
