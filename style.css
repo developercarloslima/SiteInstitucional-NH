@@ -4906,3 +4906,106 @@ body.cotacao-modal-open {
     transform: scale(1.22);
   }
 }
+
+
+/* Ajustes: telefone no header e bloco de afiliados */
+.header-phone {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid rgba(245, 204, 68, 0.32);
+  border-radius: 999px;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.86rem;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: 0.22s ease;
+}
+
+.header-phone:hover {
+  color: var(--navy-950);
+  background: var(--yellow);
+  transform: translateY(-2px);
+}
+
+.header-phone img {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.18));
+}
+
+.proof-icon.proof-icon-image {
+  overflow: hidden;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.proof-icon.proof-icon-image img {
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  display: block;
+}
+
+.proof-call-text span {
+  max-width: 560px;
+  line-height: 1.42;
+}
+
+@media (max-width: 1060px) {
+  .header-phone {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .header-phone {
+    order: 2;
+    min-height: 38px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 0.68rem;
+  }
+
+  .header-phone img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .header-cta {
+    display: none;
+  }
+
+  .proof-icon.proof-icon-image img {
+    width: 46px;
+    height: 46px;
+  }
+
+  .proof-call-text span {
+    max-width: 100%;
+    font-size: 0.58rem;
+    line-height: 1.32;
+  }
+}
+
+@media (max-width: 430px) {
+  .header-phone {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 0.58rem;
+  }
+
+  .header-phone img {
+    width: 19px;
+    height: 19px;
+  }
+
+  .proof-call-text span {
+    font-size: 0.52rem;
+  }
+}
