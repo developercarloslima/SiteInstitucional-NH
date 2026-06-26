@@ -1,3 +1,10 @@
+
+// Ano automático no footer
+const currentYearElements = document.querySelectorAll('.js-current-year');
+currentYearElements.forEach((element) => {
+  element.textContent = String(new Date().getFullYear());
+});
+
 const menuToggle = document.querySelector('.menu-toggle');
 const menu = document.querySelector('.main-menu');
 
