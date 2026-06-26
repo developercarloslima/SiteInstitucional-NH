@@ -5009,3 +5009,75 @@ body.cotacao-modal-open {
     font-size: 0.52rem;
   }
 }
+
+
+/* Ajuste final: centralização da logo no bloco de afiliado */
+.proof-affiliate-logo {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proof-affiliate-logo img {
+  width: 82px;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .proof-strip.proof-strip-single {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .proof-strip.proof-strip-single .proof-call-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .proof-affiliate-logo {
+    width: 100%;
+    margin: 0 auto 2px;
+    justify-content: center;
+  }
+
+  .proof-affiliate-logo img {
+    width: 86px;
+    margin-inline: auto;
+  }
+
+  .proof-strip.proof-strip-single .proof-call-text {
+    width: 100%;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .proof-strip.proof-strip-single .proof-call-text strong,
+  .proof-strip.proof-strip-single .proof-call-text span {
+    text-align: center;
+  }
+
+  .proof-strip.proof-strip-single .proof-call-button {
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 430px) {
+  .proof-affiliate-logo img {
+    width: 78px;
+  }
+
+  .proof-strip.proof-strip-single .proof-call-content {
+    gap: 8px;
+  }
+}
